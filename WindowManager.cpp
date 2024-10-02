@@ -1,33 +1,36 @@
 #include "WindowManager.h"
 #include <windows.h>
-#include <sstream>
 
 // Callback function for EnumWindows
-BOOL CALLBACK EnumWindowsCallback(HWND hwnd, LPARAM lParam)
+BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
-    if (IsWindowVisible(hwnd) && GetWindowTextLengthW(hwnd) > 0)
+    // Buffer to hold the window title
+    wchar_t title[256];
+    if (GetWindowTextW(hwnd, title, sizeof(title) / sizeof(wchar_t)) == 0)
     {
-        int length = GetWindowTextLengthW(hwnd);
-        std::wstring title(length, L'\0');
-        GetWindowTextW(hwnd, &title[0], length + 1);
-
-        std::vector<WindowInfo>* pWindows = reinterpret_cast<std::vector<WindowInfo>*>(lParam);
-        WindowInfo wi;
-        wi.hwnd = hwnd;
-        wi.windowTitle = title;
-        pWindows->emplace_back(wi);
-
-        // Debug logging
-        std::wstringstream ss;
-        ss << L"Added window handle: " << hwnd << L", Title: " << title << std::endl;
-        OutputDebugStringW(ss.str().c_str());
+        return TRUE; // Skip windows without titles
     }
+
+    // Check if window is visible
+    if (!IsWindowVisible(hwnd))
+    {
+        return TRUE; // Skip invisible windows
+    }
+
+    // Create a WindowInfo object and add it to the vector
+    std::vector<WindowInfo>* windows = reinterpret_cast<std::vector<WindowInfo>*>(lParam);
+    WindowInfo info;
+    info.hwnd = hwnd;
+    info.windowTitle = std::wstring(title);
+    windows->push_back(info);
+
     return TRUE; // Continue enumeration
 }
 
+// Retrieves all top-level windows
 std::vector<WindowInfo> WindowManager::GetTopLevelWindows()
 {
     std::vector<WindowInfo> windows;
-    EnumWindows(EnumWindowsCallback, reinterpret_cast<LPARAM>(&windows));
+    EnumWindows(EnumWindowsProc, reinterpret_cast<LPARAM>(&windows));
     return windows;
 }

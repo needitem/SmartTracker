@@ -21,6 +21,9 @@
     <ClCompile Include="KeyboardInput.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="CaptureScreen.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
     <ClCompile Include="WindowManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -30,6 +33,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Macro.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="CaptureScreen.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="WindowManager.h">
