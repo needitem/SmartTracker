@@ -1,0 +1,234 @@
+2024-10-04 15:04:59,296 - DEBUG - Admin check: 0
+2024-10-04 15:04:59,297 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:05:00,692 - DEBUG - Admin check: 1
+2024-10-04 15:05:00,693 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:05:00,693 - INFO - Running with administrator privileges.
+2024-10-04 15:05:02,432 - DEBUG - Target PID: 6804
+2024-10-04 15:05:02,438 - INFO - Opened process 6804 with handle 1100.
+2024-10-04 15:05:05,633 - DEBUG - Selected Module: C:\Program Files\WindowsApps\Microsoft.WindowsCalculator_11.2405.2.0_x64__8wekyb3d8bbwe\CalculatorApp.exe, Base Address: 0x7ff655b80000
+2024-10-04 15:05:05,633 - DEBUG - Offset: 0x29b76d0, Final Address: 0x7ff6585376d0, Size: 4
+2024-10-04 15:05:05,633 - ERROR - ReadProcessMemory failed at address 0x7ff6585376d0 with error code 299: ReadProcessMemory 또는 WriteProcessMemory의 일부 작업만을 마쳤습니다.
+2024-10-04 15:05:05,633 - INFO - Closed handle for process 6804.
+2024-10-04 15:06:46,832 - DEBUG - Admin check: 0
+2024-10-04 15:06:46,832 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:06:48,764 - DEBUG - Admin check: 1
+2024-10-04 15:06:48,764 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:06:48,764 - INFO - Running with administrator privileges.
+2024-10-04 15:06:51,184 - DEBUG - Target PID: 6804
+2024-10-04 15:06:51,191 - INFO - Opened process 6804 with handle 1100.
+2024-10-04 15:06:54,049 - ERROR - Invalid input: invalid literal for int() with base 16: '2024-10-04 15:04:59,296 - DEBUG - Admin check: 0'
+2024-10-04 15:06:56,585 - DEBUG - Admin check: 0
+2024-10-04 15:06:56,585 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:06:57,968 - DEBUG - Admin check: 1
+2024-10-04 15:06:57,968 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:06:57,968 - INFO - Running with administrator privileges.
+2024-10-04 15:06:59,529 - DEBUG - Target PID: 6804
+2024-10-04 15:06:59,535 - INFO - Opened process 6804 with handle 1096.
+2024-10-04 15:07:08,328 - DEBUG - Selected Module: C:\Program Files\WindowsApps\Microsoft.WindowsCalculator_11.2405.2.0_x64__8wekyb3d8bbwe\CalculatorApp.exe, Base Address: 0x7ff655b80000
+2024-10-04 15:07:08,329 - DEBUG - Offset: 0x29b76d0, Final Address: 0x7ff6585376d0, Size: 4
+2024-10-04 15:07:08,329 - ERROR - ReadProcessMemory failed at address 0x7ff6585376d0 with error code 299: ReadProcessMemory 또는 WriteProcessMemory의 일부 작업만을 마쳤습니다.
+2024-10-04 15:07:08,329 - INFO - Closed handle for process 6804.
+2024-10-04 15:07:28,952 - DEBUG - Admin check: 0
+2024-10-04 15:07:28,952 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:07:30,196 - DEBUG - Admin check: 1
+2024-10-04 15:07:30,196 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:07:30,196 - INFO - Running with administrator privileges.
+2024-10-04 15:07:33,135 - DEBUG - Target PID: 9452
+2024-10-04 15:07:33,143 - INFO - Opened process 9452 with handle 1236.
+2024-10-04 15:07:37,008 - DEBUG - Selected Module: C:\Program Files\Notepad++\notepad++.exe, Base Address: 0x7ff7a0da0000
+2024-10-04 15:07:37,008 - DEBUG - Offset: 0x0, Final Address: 0x7ff7a0da0000, Size: 4
+2024-10-04 15:07:37,008 - DEBUG - Read 4 bytes from address 0x7ff7a0da0000
+2024-10-04 15:07:37,009 - INFO - Closed handle for process 9452.
+2024-10-04 15:07:44,465 - DEBUG - Admin check: 0
+2024-10-04 15:07:44,465 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:07:45,551 - DEBUG - Admin check: 1
+2024-10-04 15:07:45,551 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:07:45,551 - INFO - Running with administrator privileges.
+2024-10-04 15:07:48,968 - DEBUG - Target PID: 6804
+2024-10-04 15:07:48,975 - INFO - Opened process 6804 with handle 1096.
+2024-10-04 15:07:51,504 - DEBUG - Selected Module: C:\Program Files\WindowsApps\Microsoft.WindowsCalculator_11.2405.2.0_x64__8wekyb3d8bbwe\CalculatorApp.exe, Base Address: 0x7ff655b80000
+2024-10-04 15:07:51,504 - DEBUG - Offset: 0x0, Final Address: 0x7ff655b80000, Size: 4
+2024-10-04 15:07:51,504 - DEBUG - Read 4 bytes from address 0x7ff655b80000
+2024-10-04 15:07:51,504 - INFO - Closed handle for process 6804.
+2024-10-04 15:14:38,297 - DEBUG - Admin check: 0
+2024-10-04 15:14:38,297 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:14:40,270 - DEBUG - Admin check: 1
+2024-10-04 15:14:40,270 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:14:40,270 - INFO - Running with administrator privileges.
+2024-10-04 15:14:49,976 - DEBUG - Target PID: 9452
+2024-10-04 15:14:49,983 - INFO - Opened process 9452 with handle 1232.
+2024-10-04 15:15:01,807 - DEBUG - Selected Module: C:\Program Files\Notepad++\notepad++.exe, Base Address: 0x7ff7a0da0000
+2024-10-04 15:15:01,807 - DEBUG - Offset: 0x1620, Final Address: 0x7ff7a0da1620, Size: 4
+2024-10-04 15:15:01,808 - CRITICAL - Unhandled exception: name 'MEM_COMMIT' is not defined
+Traceback (most recent call last):
+  File "C:\Users\p22418\DMO-macro\main.py", line 386, in <module>
+    main()
+  File "C:\Users\p22418\DMO-macro\main.py", line 358, in main
+    if is_memory_readable(process_handle, address):
+  File "C:\Users\p22418\DMO-macro\main.py", line 243, in is_memory_readable
+    if mbi.State != MEM_COMMIT:
+NameError: name 'MEM_COMMIT' is not defined
+2024-10-04 15:17:41,666 - INFO - Opened process 9452 with handle 2204.
+2024-10-04 15:17:41,670 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:17:41,670 - INFO - Closed handle for process 9452.
+2024-10-04 15:17:45,555 - INFO - Opened process 9452 with handle 2224.
+2024-10-04 15:17:45,556 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:17:45,556 - INFO - Closed handle for process 9452.
+2024-10-04 15:17:46,017 - INFO - Opened process 9452 with handle 2172.
+2024-10-04 15:17:46,017 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:17:46,018 - INFO - Closed handle for process 9452.
+2024-10-04 15:17:46,440 - INFO - Opened process 9452 with handle 2244.
+2024-10-04 15:17:46,440 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:17:46,441 - INFO - Closed handle for process 9452.
+2024-10-04 15:17:46,872 - INFO - Opened process 9452 with handle 2204.
+2024-10-04 15:17:46,872 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:17:46,873 - INFO - Closed handle for process 9452.
+2024-10-04 15:17:47,081 - INFO - Opened process 9452 with handle 2200.
+2024-10-04 15:17:47,081 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:17:47,081 - INFO - Closed handle for process 9452.
+2024-10-04 15:17:47,231 - INFO - Opened process 9452 with handle 2204.
+2024-10-04 15:17:47,232 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:17:47,232 - INFO - Closed handle for process 9452.
+2024-10-04 15:17:47,415 - INFO - Opened process 9452 with handle 2200.
+2024-10-04 15:17:47,416 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:17:47,416 - INFO - Closed handle for process 9452.
+2024-10-04 15:17:47,584 - INFO - Opened process 9452 with handle 2252.
+2024-10-04 15:17:47,584 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:17:47,584 - INFO - Closed handle for process 9452.
+2024-10-04 15:17:47,743 - INFO - Opened process 9452 with handle 2188.
+2024-10-04 15:17:47,744 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:17:47,744 - INFO - Closed handle for process 9452.
+2024-10-04 15:18:17,096 - INFO - Opened process 9452 with handle 2176.
+2024-10-04 15:18:17,096 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:18:17,096 - INFO - Closed handle for process 9452.
+2024-10-04 15:18:18,097 - INFO - Opened process 9452 with handle 2216.
+2024-10-04 15:18:18,097 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:18:18,097 - INFO - Closed handle for process 9452.
+2024-10-04 15:19:29,569 - INFO - Opened process 9452 with handle 2208.
+2024-10-04 15:19:29,570 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:19:29,570 - INFO - Closed handle for process 9452.
+2024-10-04 15:19:31,737 - INFO - Opened process 9452 with handle 2196.
+2024-10-04 15:19:31,738 - INFO - Memory dump completed. Saved to memory_dumps\memory_dump_pid_9452.bin
+2024-10-04 15:19:31,738 - INFO - Closed handle for process 9452.
+2024-10-04 15:22:37,939 - DEBUG - Admin check: 0
+2024-10-04 15:22:37,939 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:22:39,276 - DEBUG - Admin check: 1
+2024-10-04 15:22:39,276 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:22:39,276 - INFO - Running with administrator privileges.
+2024-10-04 15:22:42,648 - DEBUG - Target PID: 9452
+2024-10-04 15:22:42,656 - INFO - Opened process 9452 with handle 1232.
+2024-10-04 15:25:40,879 - DEBUG - Selected Module: C:\Program Files\Notepad++\notepad++.exe, Base Address: 0x7ff7a0da0000
+2024-10-04 15:25:40,880 - DEBUG - Offset: 0x1620, Final Address: 0x7ff7a0da1620, Size: 4
+2024-10-04 15:25:40,880 - DEBUG - Read 4 bytes from address 0x7ff7a0da1620
+2024-10-04 15:25:40,880 - INFO - Closed handle for process 9452.
+2024-10-04 15:26:58,845 - DEBUG - Admin check: 0
+2024-10-04 15:26:58,845 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:27:00,114 - DEBUG - Admin check: 1
+2024-10-04 15:27:00,115 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:27:00,115 - INFO - Running with administrator privileges.
+2024-10-04 15:27:10,543 - DEBUG - Target PID: 9452
+2024-10-04 15:27:10,551 - INFO - Opened process 9452 with handle 1240.
+2024-10-04 15:27:19,471 - DEBUG - Selected Module: C:\Program Files\Notepad++\notepad++.exe, Base Address: 0x7ff7a0da0000
+2024-10-04 15:27:19,472 - DEBUG - Offset: 0x200028, Final Address: 0x7ff7a0fa0028, Size: 4
+2024-10-04 15:27:19,472 - DEBUG - Read 4 bytes from address 0x7ff7a0fa0028
+2024-10-04 15:27:19,472 - INFO - Closed handle for process 9452.
+2024-10-04 15:33:08,796 - DEBUG - Admin check: 0
+2024-10-04 15:33:08,796 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:33:10,039 - DEBUG - Admin check: 1
+2024-10-04 15:33:10,039 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:33:10,039 - INFO - Running with administrator privileges.
+2024-10-04 15:33:13,232 - DEBUG - Target PID: 9452
+2024-10-04 15:33:13,239 - INFO - Opened process 9452 with handle 1244.
+2024-10-04 15:33:19,271 - DEBUG - Selected Module: C:\Program Files\Notepad++\notepad++.exe, Base Address: 0x7ff7a0da0000
+2024-10-04 15:33:19,271 - DEBUG - Offset: 0x200028, Final Address: 0x7ff7a0fa0028, Size: 16
+2024-10-04 15:33:19,272 - DEBUG - Read 16 bytes from address 0x7ff7a0fa0028
+2024-10-04 15:33:19,272 - INFO - Closed handle for process 9452.
+2024-10-04 15:33:30,345 - DEBUG - Admin check: 0
+2024-10-04 15:33:30,345 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:33:31,922 - DEBUG - Admin check: 1
+2024-10-04 15:33:31,922 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:33:31,922 - INFO - Running with administrator privileges.
+2024-10-04 15:33:33,783 - DEBUG - Target PID: 9452
+2024-10-04 15:33:33,790 - INFO - Opened process 9452 with handle 1248.
+2024-10-04 15:33:48,591 - DEBUG - Selected Module: C:\Program Files\Notepad++\notepad++.exe, Base Address: 0x7ff7a0da0000
+2024-10-04 15:33:48,591 - DEBUG - Offset: 0x200028, Final Address: 0x7ff7a0fa0028, Size: 8
+2024-10-04 15:33:48,591 - DEBUG - Read 8 bytes from address 0x7ff7a0fa0028
+2024-10-04 15:33:48,592 - INFO - Closed handle for process 9452.
+2024-10-04 15:33:57,335 - DEBUG - Admin check: 0
+2024-10-04 15:33:57,335 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:33:58,656 - DEBUG - Admin check: 1
+2024-10-04 15:33:58,656 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:33:58,656 - INFO - Running with administrator privileges.
+2024-10-04 15:34:01,751 - DEBUG - Target PID: 9452
+2024-10-04 15:34:01,758 - INFO - Opened process 9452 with handle 1248.
+2024-10-04 15:34:08,599 - DEBUG - Selected Module: C:\Program Files\Notepad++\notepad++.exe, Base Address: 0x7ff7a0da0000
+2024-10-04 15:34:08,599 - DEBUG - Offset: 0x200028, Final Address: 0x7ff7a0fa0028, Size: 64
+2024-10-04 15:34:08,599 - DEBUG - Read 64 bytes from address 0x7ff7a0fa0028
+2024-10-04 15:34:08,599 - INFO - Closed handle for process 9452.
+2024-10-04 15:40:50,628 - DEBUG - Admin check: 0
+2024-10-04 15:40:50,628 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:40:53,216 - DEBUG - Admin check: 1
+2024-10-04 15:40:53,217 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:40:53,217 - INFO - Running with administrator privileges.
+2024-10-04 15:40:59,647 - DEBUG - Target PID: 10652
+2024-10-04 15:40:59,654 - INFO - Opened process 10652 with handle 1288.
+2024-10-04 15:41:21,279 - DEBUG - Selected Module: C:\Program Files\WindowsApps\Microsoft.WindowsCalculator_11.2405.2.0_x64__8wekyb3d8bbwe\CalculatorApp.exe, Base Address: 0x7ff655b80000
+2024-10-04 15:41:21,279 - DEBUG - Offset: 0x27a0ad0, Final Address: 0x7ff658320ad0, Size: 16
+2024-10-04 15:41:21,279 - WARNING - Memory at 0x7ff658320ad0 is not committed.
+2024-10-04 15:41:21,279 - INFO - Closed handle for process 10652.
+2024-10-04 15:42:15,366 - DEBUG - Admin check: 0
+2024-10-04 15:42:15,366 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:44:40,140 - DEBUG - Admin check: 0
+2024-10-04 15:44:40,140 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:44:41,381 - DEBUG - Admin check: 1
+2024-10-04 15:44:41,381 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:44:41,381 - INFO - Running with administrator privileges.
+2024-10-04 15:44:45,135 - DEBUG - Target PID: 9452
+2024-10-04 15:44:45,141 - INFO - Opened process 9452 with handle 1236.
+2024-10-04 15:44:48,127 - DEBUG - Selected Module: C:\Program Files\Notepad++\notepad++.exe, Base Address: 0x7ff7a0da0000
+2024-10-04 15:44:48,127 - DEBUG - Offset: 0x0, Final Address: 0x7ff7a0da0000, Size: 16
+2024-10-04 15:44:48,128 - DEBUG - Read 16 bytes from address 0x7ff7a0da0000
+2024-10-04 15:44:48,128 - INFO - Closed handle for process 9452.
+2024-10-04 15:57:45,239 - DEBUG - Admin check: 0
+2024-10-04 15:57:45,239 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:57:46,843 - DEBUG - Admin check: 1
+2024-10-04 15:57:46,843 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:57:46,843 - INFO - Running with administrator privileges.
+2024-10-04 15:57:50,198 - DEBUG - Target PID: 9452
+2024-10-04 15:57:50,205 - INFO - Opened process 9452 with handle 1236.
+2024-10-04 15:58:03,670 - DEBUG - Selected Module: C:\Program Files\Notepad++\notepad++.exe, Base Address: 0x7ff7a0da0000
+2024-10-04 15:58:03,670 - DEBUG - Offset: 0x31aa, Final Address: 0x7ff7a0da31aa, Size: 16
+2024-10-04 15:58:03,671 - DEBUG - Read 16 bytes from address 0x7ff7a0da31aa
+2024-10-04 15:58:03,671 - INFO - Closed handle for process 9452.
+2024-10-04 15:58:17,099 - DEBUG - Admin check: 0
+2024-10-04 15:58:17,099 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 15:58:18,448 - DEBUG - Admin check: 1
+2024-10-04 15:58:18,448 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 15:58:18,448 - INFO - Running with administrator privileges.
+2024-10-04 15:58:21,478 - DEBUG - Target PID: 9452
+2024-10-04 15:58:21,483 - INFO - Opened process 9452 with handle 1240.
+2024-10-04 15:58:30,750 - DEBUG - Selected Module: C:\Program Files\Notepad++\notepad++.exe, Base Address: 0x7ff7a0da0000
+2024-10-04 15:58:30,750 - DEBUG - Offset: 0x0, Final Address: 0x7ff7a0da0000, Size: 16
+2024-10-04 15:58:30,750 - DEBUG - Read 16 bytes from address 0x7ff7a0da0000
+2024-10-04 15:58:30,750 - INFO - Closed handle for process 9452.
+2024-10-04 16:00:16,903 - DEBUG - Admin check: 0
+2024-10-04 16:00:16,903 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 16:00:18,349 - DEBUG - Admin check: 1
+2024-10-04 16:00:18,349 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 16:00:18,349 - INFO - Running with administrator privileges.
+2024-10-04 16:00:20,566 - DEBUG - Target PID: 9452
+2024-10-04 16:00:20,573 - INFO - Opened process 9452 with handle 1236.
+2024-10-04 16:00:27,118 - DEBUG - Selected Module: C:\Program Files\Notepad++\notepad++.exe, Base Address: 0x7ff7a0da0000
+2024-10-04 16:00:27,119 - DEBUG - Offset: 0x0, Final Address: 0x7ff7a0da0000, Size: 16
+2024-10-04 16:00:27,119 - DEBUG - Read 16 bytes from address 0x7ff7a0da0000
+2024-10-04 16:00:27,120 - INFO - Closed handle for process 9452.
+2024-10-04 16:04:36,788 - DEBUG - Admin check: 0
+2024-10-04 16:04:36,788 - INFO - Attempting to relaunch script with administrator privileges.
+2024-10-04 16:04:38,224 - DEBUG - Admin check: 1
+2024-10-04 16:04:38,225 - DEBUG - Admin status after ensure_admin: 1
+2024-10-04 16:04:38,225 - INFO - Running with administrator privileges.
+2024-10-04 16:04:41,190 - DEBUG - Target PID: 9452
+2024-10-04 16:04:41,196 - INFO - Opened process 9452 with handle 1240.
+2024-10-04 16:05:02,069 - DEBUG - Selected Module: C:\Program Files\Notepad++\notepad++.exe, Base Address: 0x7ff7a0da0000
+2024-10-04 16:05:02,069 - DEBUG - Offset: 0x0, Final Address: 0x7ff7a0da0000, Size: 16
+2024-10-04 16:05:02,070 - INFO - Closed handle for process 9452.
