@@ -34,3 +34,25 @@
 /Macro
 /x64
 /.vs
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Log files
+*.log
+
+# Database files
+*.db
+*.sqlite3
+
+# Environment variables
+.env
+
+# Temporary files
+*.tmp
+*.temp
+*.bin
+
+/logs
+/memory_dumps
