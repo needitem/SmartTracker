@@ -41,7 +41,7 @@ SmartTracker is a Python-based application designed to analyze memory dumps, man
 To execute the memory dump analyzer, run the following command:
 
 ```bash
-python gui/main.py
+python main.py
 ```
 
 SmartTracker/  
