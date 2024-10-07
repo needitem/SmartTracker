@@ -44,21 +44,21 @@ To execute the memory dump analyzer, run the following command:
 python gui/main.py
 ```
 
-SmartTracker/
-├── dump/
-│ ├── dump_analyzer.py
-│ ├── memory_analyzer.py
-│ ├── memory_dumper.py
-│ ├── database.py
-│ ├── memory_entry.py
-│ ├── utils.py
-│ └── init.py
-├── gui/
-│ ├── analyze_process.py
-│ └── process_selector.py
-├── .gitignore
-├── requirements.txt
-└── README.md
+SmartTracker/  
+├── dump/  
+│ ├── dump_analyzer.py  
+│ ├── memory_analyzer.py  
+│ ├── memory_dumper.py  
+│ ├── database.py  
+│ ├── memory_entry.py  
+│ ├── utils.py  
+│ └── init.py  
+├── gui/  
+│ ├── analyze_process.py  
+│ └── process_selector.py  
+├── .gitignore  
+├── requirements.txt  
+└── README.md  
 
 - **dump/**: Contains modules related to memory analysis and database interactions.
   - **dump_analyzer.py**: Main script for analyzing memory dumps.
