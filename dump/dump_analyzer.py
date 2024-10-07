@@ -12,8 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 class DumpAnalyzer:
-    def __init__(self, db_path: str, byte_unit: int = 4, endianness: str = "little"):
-        self.db = Database(db_path=db_path)
+    def __init__(
+        self, database: Database, byte_unit: int = 4, endianness: str = "little"
+    ):
+        self.db = database
         self.memory_analyzer = MemoryAnalyzer(
             db=self.db, byte_unit=byte_unit, endianness=endianness
         )
@@ -29,33 +31,28 @@ class DumpAnalyzer:
             logger.info("Memory analysis results inserted into the database.")
         except Exception as e:
             logger.error(f"Memory dump analysis failed: {e}", exc_info=True)
-            messagebox.showerror(
-                "Analysis Error", f"Failed to analyze memory dump: {e}"
-            )
+            # Raise exception to be handled by the GUI
+            raise e
 
     def analyze_dump(self):
         """Perform memory dump analysis."""
         try:
             processed_entries = self.memory_analyzer.parse_and_process_memory_regions()
             logger.info(f"Analyzed {len(processed_entries)} memory entries.")
-            messagebox.showinfo(
-                "Analysis Complete",
-                f"{len(processed_entries)} entries have been analyzed.",
-            )
+            self.db.bulk_insert_entries([entry.__dict__ for entry in processed_entries])
         except Exception as e:
             logger.error(f"Error during dump analysis: {e}", exc_info=True)
-            messagebox.showerror(
-                "Error", f"An error occurred during memory dump analysis: {e}"
-            )
+            raise e
         finally:
             self.db.close()
 
     def extract_filtered_entries(
-        self, query: str, output_csv: str = "filtered_addresses_offsets.csv"
+        self, field: str, query: str, output_csv: str = "filtered_addresses_offsets.csv"
     ) -> List[Dict[str, str]]:
         """
         Extract addresses and offsets based on a search query and save to a new CSV.
 
+        :param field: Field to search in (e.g., Address, Offset, etc.).
         :param query: Search query string.
         :param output_csv: Path to the output filtered CSV file.
         :return: List of filtered entries.
@@ -63,7 +60,7 @@ class DumpAnalyzer:
         filtered_entries = []
 
         try:
-            search_results = self.db.search_entries(query)
+            search_results = self.db.search_entries(field, query)
             if not search_results:
                 logger.info(f"No entries found matching the query: {query}")
                 return filtered_entries
@@ -81,9 +78,8 @@ class DumpAnalyzer:
                     ],
                 )
                 writer.writeheader()
-                for entry in search_results:
-                    writer.writerow(entry)
-                    filtered_entries.append(entry)
+                writer.writerows(search_results)
+                filtered_entries.extend(search_results)
             logger.info(
                 f"Filtered {len(filtered_entries)} entries based on the query '{query}'."
             )

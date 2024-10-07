@@ -1,3 +1,4 @@
+import concurrent.futures
 import struct
 import logging
 from typing import List, Dict, Optional, Tuple
@@ -14,16 +15,19 @@ class MemoryAnalyzer:
         self.byte_unit = byte_unit
         self.endianness = endianness.lower()
         self.modules = self.db.fetch_all_modules()
+        self.processed_entries: List[MemoryEntry] = []  # Initialize the attribute
         logger.info(
             f"MemoryAnalyzer initialized with byte_unit={self.byte_unit} and endianness={self.endianness}"
         )
 
     def parse_and_process_memory_regions(self) -> List[MemoryEntry]:
-        """Parse and process memory regions based on the selected byte unit and endianness."""
+        """Parse and process memory regions using multithreading for faster execution."""
         processed_entries = []
         entries = self.db.fetch_all_entries()
 
-        for entry in entries:
+        updates = []
+
+        def process_entry(entry: Dict[str, any]) -> Optional[MemoryEntry]:
             entry_id = entry.get("id")
             address = int(entry["address"], 16) if entry["address"] else None
             module = entry.get("module", "Unknown")
@@ -33,18 +37,18 @@ class MemoryAnalyzer:
                 logger.warning(
                     f"No base address found for module {module}. Skipping entry ID {entry_id}."
                 )
-                continue
+                return None
 
             if address is None:
                 logger.warning(f"Address is None for entry ID {entry_id}. Skipping.")
-                continue
+                return None
 
             offset = address - base_address
             if offset < 0:
                 logger.warning(
                     f"Negative offset calculated for entry ID {entry_id}. Skipping."
                 )
-                continue
+                return None
 
             raw_data = entry.get("raw", "")
             string_val, int_val, float_val = self._extract_values(raw_data)
@@ -56,19 +60,39 @@ class MemoryAnalyzer:
                 string=string_val,
                 integer=int_val,
                 float_num=float_val,
+                module=module,  # Ensure 'module' is included
             )
-            processed_entries.append(processed_entry)
 
-            # Update the database with the new offset and extracted values
-            update_fields = {
-                "Offset": hex(offset),
-                "String": string_val,
-                "Integer": int_val,
-                "Float_num": float_val,
-            }
+            # Collect update fields
             if entry_id:
-                self.db.update_entry(entry_id, update_fields)
+                updates.append(
+                    {
+                        "id": entry_id,
+                        "Offset": hex(offset),
+                        "String": string_val,
+                        "Integer": int_val,
+                        "Float_num": float_val,
+                    }
+                )
 
+            return processed_entry
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            future_to_entry = {
+                executor.submit(process_entry, entry): entry for entry in entries
+            }
+            for future in concurrent.futures.as_completed(future_to_entry):
+                result = future.result()
+                if result:
+                    processed_entries.append(result)
+
+        # Bulk update entries if needed
+        if updates:
+            self.db.bulk_update_entries(updates)
+
+        self.processed_entries = processed_entries  # Assign to the attribute
+
+        logger.info(f"Analyzed {len(processed_entries)} memory entries.")
         return processed_entries
 
     def _extract_values(
@@ -131,15 +155,8 @@ class MemoryAnalyzer:
         return string_val, int_val, float_val
 
     def get_module_base_address(self, module_name: str) -> Optional[int]:
-        """Retrieve the base address of a module."""
+        """Retrieve the base address of a module by its name."""
         for module in self.modules:
             if module["name"] == module_name:
-                try:
-                    return int(module["base_address"], 16)
-                except ValueError:
-                    logger.error(
-                        f"Invalid base address format for module {module_name}: {module['base_address']}"
-                    )
-                    return None
-        logger.warning(f"Module {module_name} not found in the modules table.")
+                return int(module["base_address"], 16)
         return None

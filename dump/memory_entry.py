@@ -10,3 +10,4 @@ class MemoryEntry:
     string: str
     integer: Optional[int]
     float_num: Optional[float]
+    module: str  # Added module field

@@ -5,6 +5,7 @@ import logging
 from abc import ABC, abstractmethod
 import psutil
 from typing import List, Dict, Optional
+import concurrent.futures
 
 from dump.utils import is_process_64bit
 from dump.database import Database
@@ -33,7 +34,7 @@ class AbstractMemoryDumper(ABC):
         pass
 
     @abstractmethod
-    def dump_memory(self):
+    def dump_memory(self) -> str:
         pass
 
 
@@ -87,9 +88,9 @@ class MemoryDumper(AbstractMemoryDumper):
                     base_address_str = m.addr.split("-")[0]
                     base_address = int(base_address_str, 16)
                     module_info = {
-                        "Name": path,
-                        "BaseAddress": hex(base_address),
-                        "RSS": rss,
+                        "name": path,  # Changed to lowercase
+                        "base_address": hex(base_address),  # Changed to lowercase
+                        "rss": rss,  # Changed to lowercase
                     }
                     modules_info.append(module_info)
                     logger.debug(
@@ -134,22 +135,21 @@ class MemoryDumper(AbstractMemoryDumper):
                 )
 
             address += mbi.RegionSize
-        logger.info(f"Total memory regions collected: {len(regions)}")
+        logger.info(f"Collected {len(regions)} memory regions.")
         return regions
 
     def dump_memory(self) -> str:
-        """Perform memory dump."""
+        """Perform memory dump using multithreading for faster execution."""
         try:
             logger.info("Starting memory dump process.")
             regions = self.get_memory_regions()
             logger.debug(f"Number of regions to dump: {len(regions)}")
 
-            # Collect entries to insert into the database
             entries = []
-            for base, size in regions:
+
+            def read_region(base: int, size: int) -> Optional[Dict[str, any]]:
                 buffer = ctypes.create_string_buffer(size)
                 bytes_read = ctypes.c_size_t(0)
-
                 success = ctypes.windll.kernel32.ReadProcessMemory(
                     self.handle,
                     ctypes.c_void_p(base),
@@ -157,43 +157,60 @@ class MemoryDumper(AbstractMemoryDumper):
                     size,
                     ctypes.byref(bytes_read),
                 )
-
                 if success and bytes_read.value > 0:
                     data = buffer.raw[: bytes_read.value]
                     entry = {
-                        "Address": hex(base),
-                        "Offset": hex(
+                        "address": hex(base),
+                        "offset": hex(
                             base
-                        ),  # Placeholder; actual offset calculation should be done in analyzer
-                        "Raw": data.hex()[:2000],
-                        "String": "",  # Placeholder
-                        "Int": None,  # Placeholder
-                        "Float": None,  # Placeholder
-                        "Module": self.get_module_name(base),
+                        ),  # Placeholder; actual offset calculation done in analyzer
+                        "raw": data.hex()[:2000],
+                        "string": "",  # Placeholder
+                        "integer": "",  # Placeholder
+                        "float_num": 0.0,  # Placeholder
+                        "module": self.get_module_name(base),
                     }
-                    entries.append(entry)
                     logger.debug(
                         f"Dumped memory region: Base={hex(base)}, Size={bytes_read.value} bytes"
                     )
+                    return entry
                 else:
                     error_code = ctypes.windll.kernel32.GetLastError()
                     logger.warning(
                         f"Failed to read memory at Base={hex(base)}, Size={size} bytes. Error Code={error_code}"
                     )
-            # Bulk insert memory entries into the database
-            self.db.bulk_insert_entries(entries)
-            logger.info("Memory dump completed and data inserted into the database.")
+                    return None
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+                future_to_region = {
+                    executor.submit(read_region, base, size): (base, size)
+                    for base, size in regions
+                }
+                for future in concurrent.futures.as_completed(future_to_region):
+                    entry = future.result()
+                    if entry:
+                        entries.append(entry)
+
+            if entries:
+                # Bulk insert memory entries into the database
+                self.db.bulk_insert_entries(entries)
+                logger.info(
+                    "Memory dump completed and data inserted into the database."
+                )
+            else:
+                logger.warning("No memory entries were dumped.")
+
             return self.db_path  # Return the database file path
         except Exception as e:
             logger.error(f"Error during memory dump: {e}", exc_info=True)
             raise e
 
-    def get_module_name(self, address: int) -> str:
-        """Retrieve the module name for a given address based on base addresses."""
+    def get_module_name(self, base_address: int) -> str:
+        """Retrieve module name based on base address."""
         for module in self.modules:
-            base_addr = int(module["BaseAddress"], 16)
-            if address >= base_addr:
-                return module["Name"]
+            module_base = int(module["base_address"], 16)
+            if base_address >= module_base:
+                return module["name"]
         return "Unknown"
 
     def __del__(self):
