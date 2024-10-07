@@ -1,4 +1,5 @@
-# gui/analyze_process/main_window.py
+# Modified gui/analyze_process/main_window.py
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -12,7 +13,6 @@ from .search_tab import SearchTab
 from .widgets import StatusLabel, ProgressBar
 
 logger = logging.getLogger(__name__)
-
 
 class AnalyzeProcessWindow(tk.Toplevel):
     def __init__(self, parent: tk.Tk, dump_path: str):
@@ -31,12 +31,12 @@ class AnalyzeProcessWindow(tk.Toplevel):
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
-        # Create Analysis Results Tab with the Database instance
-        self.analysis_tab = AnalysisTab(self.notebook, self.db)
+        # Create Analysis Results Tab with the DumpAnalyzer instance
+        self.analysis_tab = AnalysisTab(self.notebook, self.dump_analyzer)
         self.notebook.add(self.analysis_tab, text="분석 결과")
 
-        # Create Search Tab
-        self.search_tab = SearchTab(self.notebook, self.dump_analyzer)
+        # Create Search Tab with reference to analysis_tab
+        self.search_tab = SearchTab(self.notebook, self.dump_analyzer, self.analysis_tab)
         self.notebook.add(self.search_tab, text="검색")
 
         # Create Status and Progress Widgets
@@ -52,33 +52,22 @@ class AnalyzeProcessWindow(tk.Toplevel):
         analysis_thread.start()
 
     def run_analysis(self):
-        """Run the memory analysis in a separate thread."""
+        """Run the memory analysis."""
         try:
+            # Analyze the dumped memory
             self.dump_analyzer.analyze_and_export()
-            processed_count = len(self.dump_analyzer.memory_analyzer.processed_entries)
-            modules = self.db.fetch_all_modules()
-            self.after(
-                0,
-                self.on_analysis_complete,
-                processed_count,
-                self.dump_analyzer.memory_analyzer.processed_entries,
-                modules,
+
+            # Load data into the analysis tab
+            self.analysis_tab.load_data(
+                entries=self.dump_analyzer.memory_analyzer.processed_entries,
+                modules=self.db.fetch_all_modules()
             )
+
+            self.status_label.set_text("Analysis completed successfully.")
+            logger.info("Analysis results window opened successfully.")
         except Exception as e:
-            logger.error(f"Analysis failed: {e}", exc_info=True)
-            self.after(0, self.on_analysis_error, str(e))
+            logger.error(f"Error during analysis: {e}")
+            messagebox.showerror("Analysis Error", f"An error occurred during analysis: {e}")
+            self.status_label.set_text("Analysis failed.")
         finally:
-            self.after(0, self.progress_bar.stop)
-
-    def on_analysis_complete(self, count, entries, modules):
-        """Handle the completion of the analysis."""
-        self.status_label.config(text=f"Analysis complete. {count} entries processed.")
-        messagebox.showinfo("Analysis Complete", f"{count} entries have been analyzed.")
-        self.analysis_tab.load_data(entries, modules)
-
-    def on_analysis_error(self, error_message):
-        """Handle errors that occur during analysis."""
-        self.status_label.config(text="Analysis failed.")
-        messagebox.showerror(
-            "Analysis Error", f"Failed to analyze memory dump: {error_message}"
-        )
+            self.progress_bar.stop()

@@ -1,125 +1,100 @@
-# gui/analyze_process/search_tab.py
+# Modified gui/analyze_process/search_tab.py
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
 
+from dump.dump_analyzer import DumpAnalyzer
+
 logger = logging.getLogger(__name__)
 
-
 class SearchTab(ttk.Frame):
-    def __init__(self, parent, dump_analyzer):
+    def __init__(self, parent, dump_analyzer: DumpAnalyzer, analysis_tab):
         super().__init__(parent)
-        self.parent = parent
         self.dump_analyzer = dump_analyzer
+        self.analysis_tab = analysis_tab
         self.create_widgets()
 
     def create_widgets(self):
-        """Create widgets for the search tab."""
-        # Create search frame
-        search_frame = ttk.LabelFrame(self, text="Search Memory Entries")
-        search_frame.pack(fill=tk.X, padx=10, pady=5)
+        # Create search options
+        search_frame = ttk.Frame(self)
+        search_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        # Field selection
-        ttk.Label(search_frame, text="Field:").grid(
-            row=0, column=0, padx=5, pady=5, sticky=tk.W
-        )
-        self.field_var = tk.StringVar()
-        fields = [
-            "address",
-            "offset",
-            "raw",
-            "string",
-            "integer",
-            "float_num",
-            "module",
-        ]
-        self.field_combo = ttk.Combobox(
-            search_frame, textvariable=self.field_var, values=fields, state="readonly"
-        )
-        self.field_combo.grid(row=0, column=1, padx=5, pady=5)
-        self.field_combo.current(0)
+        ttk.Label(search_frame, text="Search Term:").pack(side=tk.LEFT, padx=(0, 5))
+        self.search_entry = ttk.Entry(search_frame)
+        self.search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
 
-        # Query entry
-        ttk.Label(search_frame, text="Query:").grid(
-            row=0, column=2, padx=5, pady=5, sticky=tk.W
-        )
-        self.query_var = tk.StringVar()
-        self.query_entry = ttk.Entry(search_frame, textvariable=self.query_var)
-        self.query_entry.grid(row=0, column=3, padx=5, pady=5, sticky=tk.W + tk.E)
+        ttk.Button(search_frame, text="Search", command=self.perform_search).pack(side=tk.LEFT)
 
-        # Search button
-        self.search_button = ttk.Button(
-            search_frame, text="Search", command=self.perform_search
+        # Create Treeview to display search results
+        self.table = ttk.Treeview(
+            self,
+            columns=("Address", "Offset", "Raw", "String", "Int", "Float", "Module"),
+            show="headings",
         )
-        self.search_button.grid(row=0, column=4, padx=5, pady=5)
+        for col in ("Address", "Offset", "Raw", "String", "Int", "Float", "Module"):
+            self.table.heading(col, text=col)
+            self.table.column(col, width=150, anchor="center")
+        self.table.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 0), pady=10)
 
-        # Configure grid weights
-        search_frame.columnconfigure(3, weight=1)
-
-        # Create results table
-        results_frame = ttk.Frame(self)
-        results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-
-        columns = (
-            "address",
-            "offset",
-            "raw",
-            "string",
-            "integer",
-            "float_num",
-            "module",
-        )
-        self.search_table = ttk.Treeview(
-            results_frame, columns=columns, show="headings"
-        )
-        for col in columns:
-            self.search_table.heading(col, text=col.capitalize())
-            self.search_table.column(col, minwidth=100, width=150, anchor=tk.CENTER)
-        self.search_table.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        # Add scrollbars
-        scrollbar_y = ttk.Scrollbar(
-            results_frame, orient="vertical", command=self.search_table.yview
-        )
-        scrollbar_x = ttk.Scrollbar(
-            self, orient="horizontal", command=self.search_table.xview
-        )
-        self.search_table.configure(
+        # Add Scrollbars
+        scrollbar_y = ttk.Scrollbar(self, orient="vertical", command=self.table.yview)
+        scrollbar_x = ttk.Scrollbar(self, orient="horizontal", command=self.table.xview)
+        self.table.configure(
             yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set
         )
-        scrollbar_y.pack(side=tk.LEFT, fill=tk.Y)
-        scrollbar_x.pack(side=tk.BOTTOM, fill=tk.X)
+        scrollbar_y.pack(side=tk.LEFT, fill=tk.Y, pady=10)
+        scrollbar_x.pack(side=tk.BOTTOM, fill=tk.X, padx=10)
 
     def perform_search(self):
-        """Perform a search based on the selected field and query."""
-        field = self.field_var.get()
-        query = self.query_var.get().strip()
-
+        """Perform search based on the input term."""
+        query = self.search_entry.get().strip()
         if not query:
-            messagebox.showwarning("Input Error", "Please enter a query string.")
+            logger.warning("Search query is empty.")
+            messagebox.showwarning("Search Warning", "Please enter a search term.")
             return
 
-        logger.info(f"Performing search on field '{field}' with query '{query}'.")
-        filtered_entries = self.dump_analyzer.extract_filtered_entries(field, query)
+        logger.info(f"Performing search for term: {query}")
+        try:
+            results = self.dump_analyzer.analyze_dump()
+            filtered = [
+                entry for entry in results
+                if query.lower() in (entry.get("raw", "").lower()) or
+                   query.lower() in (entry.get("string", "").lower())
+            ]
+            self.display_results(filtered)
+            logger.info(f"Search completed. Found {len(filtered)} matching entries.")
+        except Exception as e:
+            logger.error(f"Error during search: {e}")
+            messagebox.showerror("Search Error", f"An error occurred during search: {e}")
 
-        # Clear existing entries in the search table
-        for item in self.search_table.get_children():
-            self.search_table.delete(item)
+    def display_results(self, entries):
+        """Display search results in the table."""
+        try:
+            # Clear existing data
+            for item in self.table.get_children():
+                self.table.delete(item)
 
-        # Insert new entries
-        for entry in filtered_entries:
-            self.search_table.insert(
-                "",
-                tk.END,
-                values=(
-                    entry.get("address", "N/A"),
-                    entry.get("offset", "N/A"),
-                    entry.get("raw", "N/A"),
-                    entry.get("string", "N/A"),
-                    entry.get("integer", "N/A"),
-                    entry.get("float_num", "N/A"),
-                    entry.get("module", "N/A"),
-                ),
-            )
+            # Load new data
+            for entry in entries:
+                self.table.insert(
+                    "",
+                    tk.END,
+                    values=(
+                        entry.get("address", ""),
+                        entry.get("offset", ""),
+                        entry.get("raw", ""),
+                        entry.get("string", ""),
+                        entry.get("integer", ""),
+                        entry.get("float_num", ""),
+                        entry.get("module", ""),
+                    ),
+                )
+                logger.debug(f"Displayed search entry: {entry}")
 
-        logger.info(f"Search completed. {len(filtered_entries)} entries found.")
+            if not entries:
+                logger.info("No matching entries found.")
+                messagebox.showinfo("Search Results", "No matching entries found.")
+        except Exception as e:
+            logger.error(f"Failed to display search results: {e}")
+            messagebox.showerror("Display Error", f"An error occurred while displaying results: {e}")

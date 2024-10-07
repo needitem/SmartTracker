@@ -1,162 +1,115 @@
-import concurrent.futures
-import struct
 import logging
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple
 
-from dump.memory_entry import MemoryEntry
 from dump.database import Database
+from dump.memory_entry import MemoryEntry
 
 logger = logging.getLogger(__name__)
 
+from dump.memory_dumper import WindowsMemoryDumper  # Ensure this is correct
 
 class MemoryAnalyzer:
-    def __init__(self, db: Database, byte_unit: int = 4, endianness: str = "little"):
+    def __init__(self, db: Database):
         self.db = db
-        self.byte_unit = byte_unit
-        self.endianness = endianness.lower()
-        self.modules = self.db.fetch_all_modules()
-        self.processed_entries: List[MemoryEntry] = []  # Initialize the attribute
-        logger.info(
-            f"MemoryAnalyzer initialized with byte_unit={self.byte_unit} and endianness={self.endianness}"
-        )
+        self.processed_entries: List[MemoryEntry] = []
 
-    def parse_and_process_memory_regions(self) -> List[MemoryEntry]:
-        """Parse and process memory regions using multithreading for faster execution."""
-        processed_entries = []
-        entries = self.db.fetch_all_entries()
+    def get_module_base_address(self, module_name: str) -> Optional[int]:
+        """Retrieve the base address of a given module."""
+        modules = self.db.fetch_all_modules()
+        for module in modules:
+            if module['name'].lower() == module_name.lower():
+                try:
+                    return int(module['base_address'], 16)
+                except ValueError:
+                    logger.error(f"Invalid base address format for module {module_name}: {module['base_address']}")
+        return None
 
-        updates = []
-
-        def process_entry(entry: Dict[str, any]) -> Optional[MemoryEntry]:
-            entry_id = entry.get("id")
-            address = int(entry["address"], 16) if entry["address"] else None
-            module = entry.get("module", "Unknown")
-
-            base_address = self.get_module_base_address(module)
-            if base_address is None:
-                logger.warning(
-                    f"No base address found for module {module}. Skipping entry ID {entry_id}."
-                )
-                return None
-
-            if address is None:
-                logger.warning(f"Address is None for entry ID {entry_id}. Skipping.")
-                return None
-
-            offset = address - base_address
-            if offset < 0:
-                logger.warning(
-                    f"Negative offset calculated for entry ID {entry_id}. Skipping."
-                )
-                return None
-
-            raw_data = entry.get("raw", "")
-            string_val, int_val, float_val = self._extract_values(raw_data)
-
-            processed_entry = MemoryEntry(
-                address=hex(address),
-                offset=hex(offset),
-                raw=raw_data,
-                string=string_val,
-                integer=int_val,
-                float_num=float_val,
-                module=module,  # Ensure 'module' is included
-            )
-
-            # Collect update fields
-            if entry_id:
-                updates.append(
-                    {
-                        "id": entry_id,
-                        "Offset": hex(offset),
-                        "String": string_val,
-                        "Integer": int_val,
-                        "Float_num": float_val,
-                    }
-                )
-
-            return processed_entry
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-            future_to_entry = {
-                executor.submit(process_entry, entry): entry for entry in entries
-            }
-            for future in concurrent.futures.as_completed(future_to_entry):
-                result = future.result()
-                if result:
-                    processed_entries.append(result)
-
-        # Bulk update entries if needed
-        if updates:
-            self.db.bulk_update_entries(updates)
-
-        self.processed_entries = processed_entries  # Assign to the attribute
-
-        logger.info(f"Analyzed {len(processed_entries)} memory entries.")
-        return processed_entries
-
-    def _extract_values(
-        self, raw_data: str
-    ) -> Tuple[str, Optional[int], Optional[float]]:
-        """
-        Extract string, integer, and float values from raw memory data based on byte unit and endianness.
-
-        :param raw_data: Raw memory data as a hexadecimal string.
-        :return: Tuple containing the extracted string, integer, and float values.
-        """
-        string_val = ""
-        int_val = None
-        float_val = None
-
+    def extract_values(self, raw_data: bytes) -> Tuple[Optional[str], Optional[int], Optional[float]]:
+        """Extract string, integer, and float values from raw data."""
+        # Extract string: meaningful ASCII strings (4+ chars, no special chars)
         try:
-            bytes_data = bytes.fromhex(raw_data)
+            decoded_str = raw_data.decode('utf-8', errors='ignore')
+            meaningful_strings = re.findall(r'\b[A-Za-z0-9]{4,}\b', decoded_str)
+            string_val = ', '.join(meaningful_strings) if meaningful_strings else None
+        except Exception as e:
+            logger.error(f"Failed to decode string from raw data: {e}")
+            string_val = None
 
-            # Attempt to decode as UTF-8 string
-            try:
-                string_val = bytes_data.decode("utf-8").strip("\x00")
-            except UnicodeDecodeError:
-                logger.debug("Failed to decode raw data as UTF-8 string.")
-
-            # Determine byte order based on endianness
-            if self.endianness == "little":
-                byte_order = "little"
-                struct_format_prefix = "<"  # Little endian
-            elif self.endianness == "big":
-                byte_order = "big"
-                struct_format_prefix = ">"  # Big endian
+        # Extract integer (signed 4 bytes)
+        try:
+            if len(raw_data) >= 4:
+                int_val = struct.unpack('<i', raw_data[:4])[0]
             else:
-                logger.warning(
-                    f"Unsupported endianness '{self.endianness}'. Defaulting to little endian."
-                )
-                byte_order = "little"
-                struct_format_prefix = "<"
+                int_val = None
+        except struct.error as e:
+            logger.error(f"Failed to unpack integer: {e}")
+            int_val = None
 
-            # Attempt to extract integer (based on byte_unit)
-            if len(bytes_data) >= self.byte_unit:
-                int_val = int.from_bytes(
-                    bytes_data[: self.byte_unit], byteorder=byte_order, signed=True
-                )
-
-            # Attempt to extract float (IEEE 754, based on byte_unit)
-            if self.byte_unit == 4 and len(bytes_data) >= 4:
-                float_val = struct.unpack(f"{struct_format_prefix}f", bytes_data[:4])[0]
-            elif self.byte_unit == 8 and len(bytes_data) >= 8:
-                float_val = struct.unpack(f"{struct_format_prefix}d", bytes_data[:8])[0]
-            elif self.byte_unit > 8:
-                logger.debug(
-                    f"Float extraction not supported for byte unit: {self.byte_unit}"
-                )
-
-        except ValueError as ve:
-            logger.error(f"Value error during extraction: {ve}")
-        except Exception as ex:
-            logger.error(f"Unexpected error during extraction: {ex}")
+        # Extract float (4 bytes)
+        try:
+            if len(raw_data) >= 4:
+                float_val = struct.unpack('<f', raw_data[:4])[0]
+            else:
+                float_val = None
+        except struct.error as e:
+            logger.error(f"Failed to unpack float: {e}")
+            float_val = None
 
         return string_val, int_val, float_val
 
-    def get_module_base_address(self, module_name: str) -> Optional[int]:
-        """Retrieve the base address of a module by its name."""
-        for module in self.modules:
-            if module["name"] == module_name:
-                return int(module["base_address"], 16)
-        return None
+    def process_entry(self, entry: Dict[str, Any]) -> Optional[MemoryEntry]:
+        entry_id = entry.get("id")
+        address = int(entry["address"], 16) if entry["address"] else None
+        module = entry.get("module", "Unknown")
+
+        base_address = self.get_module_base_address(module)
+        if base_address is None:
+            logger.warning(f"No base address found for module {module}. Skipping entry ID {entry_id}.")
+            return None
+
+        if address is None:
+            logger.warning(f"Address is None for entry ID {entry_id}. Skipping.")
+            return None
+
+        offset = address - base_address
+        if offset < 0:
+            logger.warning(f"Negative offset calculated for entry ID {entry_id}. Skipping.")
+            return None
+
+        raw_data = bytes.fromhex(entry.get("raw", ""))
+        string_val, int_val, float_val = self.extract_values(raw_data)
+
+        memory_entry = MemoryEntry(
+            address=entry["address"],
+            offset=hex(offset),
+            raw=entry["raw"],
+            string=string_val,
+            integer=int_val,
+            float_num=float_val,
+            module=module,
+        )
+
+        self.processed_entries.append(memory_entry)
+        logger.debug(f"Processed MemoryEntry: {memory_entry}")
+        return memory_entry
+
+    def parse_and_process_memory_regions(self, data_type: str = "All") -> List[MemoryEntry]:
+        """Parse and process memory regions based on the specified data type."""
+        entries = self.db.fetch_all_memory_entries()
+        processed = []
+        for entry in entries:
+            memory_entry = self.process_entry(entry)
+            if memory_entry:
+                if data_type == "All" or self.filter_entry(memory_entry, data_type):
+                    processed.append(memory_entry)
+        return processed
+
+    def filter_entry(self, entry: MemoryEntry, data_type: str) -> bool:
+        """Filter memory entries based on the specified data type."""
+        if data_type == "Strings" and entry.string:
+            return True
+        if data_type == "Integers" and entry.integer is not None:
+            return True
+        if data_type == "Floats" and entry.float_num is not None:
+            return True
+        return False

@@ -1,38 +1,38 @@
 import unittest
 from dump.database import Database
+from dump.memory_entry import MemoryEntry
 
 
 class TestDatabase(unittest.TestCase):
     def setUp(self):
-        self.db = Database(db_path=":memory:")  # Use in-memory database for testing
-        self.db.create_tables()
+        # Use an in-memory database for testing
+        self.db = Database(db_path=":memory:")
 
-    def test_bulk_insert_entries(self):
-        entries = [
-            {
-                "address": "0x1000",
-                "offset": "0x0",
-                "raw": "deadbeef",
-                "string": "test",
-                "integer": "3735928559",
-                "float_num": 3.14,
-                "module": "test_module",
-            },
-            {
-                "address": "0x2000",
-                "offset": "0x1000",
-                "raw": "cafebabe",
-                "string": "example",
-                "integer": "3405691582",
-                "float_num": 2.718,
-                "module": "example_module",
-            },
-        ]
-        self.db.bulk_insert_entries(entries)
-        fetched_entries = self.db.fetch_all_entries()
-        self.assertEqual(len(fetched_entries), 2)
-        self.assertEqual(fetched_entries[0]["address"], "0x1000")
-        self.assertEqual(fetched_entries[1]["module"], "example_module")
+    def test_insert_and_fetch_module(self):
+        self.db.insert_module("test_module", "0x1000", 4096, "C:\\Path\\To\\test_module.exe")
+        modules = self.db.fetch_all_modules()
+        self.assertEqual(len(modules), 1)
+        self.assertEqual(modules[0]['name'], "test_module")
+        self.assertEqual(modules[0]['exe_path'], "C:\\Path\\To\\test_module.exe")
+
+    def test_insert_and_fetch_memory_entry(self):
+        entry = MemoryEntry(
+            address="0x1000",
+            offset="0x0",
+            raw="deadbeef",
+            string="test",
+            integer=1234,
+            float_num=56.78,
+            module="test_module"
+        )
+        self.db.insert_memory_entry(entry)
+        entries = self.db.fetch_all_memory_entries()
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]['address'], "0x1000")
+        self.assertEqual(entries[0]['string'], "test")
+        self.assertEqual(entries[0]['integer'], 1234)
+        self.assertEqual(entries[0]['float_num'], 56.78)
+        self.assertEqual(entries[0]['module'], "test_module")
 
     def tearDown(self):
         self.db.close()
