@@ -21,4 +21,7 @@ __all__ = [
     "MemoryDumper",
     "find_pointer",
     "write_pointer",
+    "search_memory_for_value",    # Added
+    "search_memory_for_float",    # Added
+    "search_memory_for_string",   # Added
 ]

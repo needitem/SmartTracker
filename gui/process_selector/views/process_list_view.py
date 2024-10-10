@@ -5,12 +5,23 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ProcessListView(ttk.Treeview):
-    def __init__(self, parent, select_callback):
-        # "Base Address" 컬럼을 제거하고 "PID"와 "Name"만 사용
-        super().__init__(parent, columns=("PID", "Name"), show="headings")
+    def __init__(self, parent, on_select_callback, width=None, height=20):
+        super().__init__(parent, columns=("PID", "Name"), show="headings", height=height)
+
+        # Define column headings
         self.heading("PID", text="PID", command=lambda: self.sort_column("PID", False))
         self.heading("Name", text="Process Name", command=lambda: self.sort_column("Name", False))
-        self.bind("<<TreeviewSelect>>", select_callback)
+
+        # Set column widths if width is provided
+        if width:
+            # Distribute the provided width between columns (e.g., 30% for PID and 70% for Name)
+            self.column("PID", width=int(width * 0.3), anchor=tk.CENTER)
+            self.column("Name", width=int(width * 0.7), anchor=tk.W)
+
+        # Bind the selection event to the callback
+        self.bind("<<TreeviewSelect>>", on_select_callback)
+
+        # Pack the Treeview into the parent frame
         self.pack(fill=tk.BOTH, expand=True)
 
     def sort_column(self, col, reverse):
