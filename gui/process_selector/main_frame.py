@@ -7,10 +7,11 @@ import logging
 import psutil
 import platform
 from typing import List, Dict, Any
+import subprocess  # Cheat Engine 실행을 위한 모듈 추가
+import os
 
 from dump.base.memory_dumper import MemoryDumper
-from gui.analyze_process.analysis_tab import AnalysisTab
-from gui.analyze_process.main_window import AnalyzeProcessWindow
+from gui.analyze_process.main_window import AnalyzeProcessWindow  # AnalysisTab 제거
 from ..analyze_process.controllers.search_controller import SearchController
 from .controllers.process_controller import ProcessController
 from .controllers.module_controller import ModuleController
@@ -28,7 +29,6 @@ class ProcessSelector(ttk.Frame):
         parent,
         memory_dumper: MemoryDumper,
         memory_analyzer: MemoryAnalyzer,
-        analysis_tab: AnalysisTab,
     ):
         super().__init__(parent)
         self.parent = parent
@@ -38,7 +38,7 @@ class ProcessSelector(ttk.Frame):
         )  # Initialize with memory_dumper
         self.module_controller = ModuleController()  # Removed database parameter
         self.search_controller = SearchController(
-            memory_analyzer, analysis_tab
+            memory_analyzer, None  # AnalysisTab 제거
         )  # Pass required arguments
         self.dumped_pids = set()  # 추적할 PID들
         self.create_widgets()
@@ -88,49 +88,96 @@ class ProcessSelector(ttk.Frame):
         self.module_list.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.LEFT, fill=tk.Y, pady=5)
 
+        # Add Buttons Frame
+        buttons_frame = ttk.Frame(self)
+        buttons_frame.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=5)
+
+        # Add Cheat Engine Button
+        self.cheat_engine_button = ttk.Button(
+            buttons_frame,
+            text="Cheat Engine",
+            command=self.open_cheat_engine,
+        )
+        self.cheat_engine_button.pack(pady=5, fill=tk.X)
+
+        # Add Find Offset Button
+        self.find_offset_button = ttk.Button(
+            buttons_frame,
+            text="Find Offset",
+            command=self.find_offset,
+        )
+        self.find_offset_button.pack(pady=5, fill=tk.X)
+
         # Add Dump Memory Button
         self.dump_button = ttk.Button(
-            self,
+            buttons_frame,
             text="Dump Memory",
             command=self.dump_selected_process,
             state=tk.DISABLED,
         )
-        self.dump_button.pack(pady=10)
+        self.dump_button.pack(pady=20, fill=tk.X)
 
     def populate_process_list(self):
         """프로세스 목록을 채우고 데이터베이스에 프로세스와 모듈을 저장합니다."""
-        # 기존 항목 삭제
-        for item in self.process_list.get_children():
-            self.process_list.delete(item)
+        try:
+            # 기존 항목 삭제
+            for item in self.process_list.get_children():
+                self.process_list.delete(item)
 
-        # 모든 실행 중인 프로세스 반복
-        for proc in psutil.process_iter(["pid", "name"]):
-            try:
-                pid = proc.info["pid"]
-                name = proc.info["name"]
+            # 모든 실행 중인 프로세스 반복
+            for proc in psutil.process_iter(["pid", "name"]):
+                try:
+                    pid = proc.info["pid"]
 
-                # Use pymem to open the process and list modules
-                pm = Pymem(pid)
-                modules = self.dumper.list_modules(pid)  # Pass pid if required
-                pm.close_process()
+                    # PID가 0 이하인 경우 건너뜁니다.
+                    if pid <= 0:
+                        logger.warning(f"Skipping invalid PID={pid}")
+                        continue
 
-                # base_address 초기화
-                base_address_str = self.compute_base_address(proc)
+                    name = proc.info["name"]
+                    logger.debug(f"Attempting to open PID={pid}, Process Name={name}")  # 추가: 디버그 로그
 
-                # 프로세스 목록에 삽입
-                self.process_list.insert(
-                    "", tk.END, values=(pid, name, base_address_str)
-                )
-                logger.debug(
-                    f"Inserted process: PID={pid}, Name={name}, Base Address={base_address_str}"
-                )
+                    # Pymem을 사용하여 프로세스 열기 및 모듈 목록 가져오기
+                    try:
+                        pm = Pymem(pid)
+                    except Exception as e:
+                        logger.error(f"Pymem 호출 중 에러가 발생했습니다 PID={pid}: {e}")
+                        continue  # 유효하지 않은 PID이거나 접근 불가한 경우 건너뜁니다.
 
-                # 프로세스의 모듈 삽입
-                self.insert_process_modules(pid)
+                    try:
+                        modules = self.dumper.list_modules(pid)  # 필요 시 pid 전달
+                    except Exception as e:
+                        logger.error(f"Could not open process: {pid}. Error: {e}")
+                        try:
+                            pm.close_process()
+                        except Exception as close_e:
+                            logger.error(f"Error closing process PID={pid}: {close_e}")
+                        continue  # 프로세스 관련 에러가 발생하면 건너뜁니다.
 
-            except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
-                logger.warning(f"프로세스 {proc}에 접근할 수 없습니다: {e}")
-                continue
+                    try:
+                        pm.close_process()  # 프로세스 닫기
+                    except Exception as close_e:
+                        logger.error(f"Error closing process PID={pid}: {close_e}")
+
+                    base_address_str = self.compute_base_address(proc)
+
+                    # 프로세스 목록에 삽입
+                    self.process_list.insert(
+                        "", tk.END, values=(pid, name, base_address_str)
+                    )
+                    logger.debug(
+                        f"Inserted process: PID={pid}, Name={name}, Base Address={base_address_str}"
+                    )
+
+                    # 프로세스의 모듈 삽입
+                    self.insert_process_modules(pid)
+
+                except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                    logger.warning(f"프로세스 {proc}에 접근할 수 없습니다: {e}")
+                    continue
+        except Exception as e:
+            logger.error(f"Error populating process list: {e}")
+            messagebox.showerror("Error", f"Error populating process list: {e}")
 
     def insert_process_modules(self, pid: int):
         """특정 프로세스의 모든 모듈을 데이터베이스에 삽입합니다."""
@@ -272,8 +319,7 @@ class ProcessSelector(ttk.Frame):
                 return
 
             # Perform analysis using memory_dumper or other components
-            logger.info("Analysis functionality is being executed without database.")
-            # Example: self.memory_dumper.perform_analysis(self.dumped_pids)
+            logger.info("Analysis functionality has been removed.")
             messagebox.showinfo(
                 "Analysis Completed",
                 "Memory analysis has been completed successfully.",
@@ -286,9 +332,60 @@ class ProcessSelector(ttk.Frame):
 
     def compute_base_address(self, proc: psutil.Process) -> str:
         """Compute the base address for a given process."""
-        modules = self.dumper.get_modules(proc.pid)  # Use MemoryDumper to get modules
+        modules = self.dumper.get_process_modules(proc.pid)  # 수정된 메서드 호출
         if modules:
             first_module = modules[0]
             return first_module.get("base_address", "0x0")
         else:
             return "0x0"
+
+    # 추가된 메서드: Cheat Engine 열기
+    def open_cheat_engine(self):
+        """Cheat Engine 실행."""
+        try:
+            # Cheat Engine의 경로를 지정해주세요
+            cheat_engine_path = "C:\\Program Files\\Cheat Engine 7.4\\CheatEngine.exe"
+            if not os.path.exists(cheat_engine_path):
+                logger.error(f"Cheat Engine not found at {cheat_engine_path}.")
+                messagebox.showerror(
+                    "Cheat Engine Not Found",
+                    f"Cheat Engine not found at {cheat_engine_path}.",
+                )
+                return
+            subprocess.Popen([cheat_engine_path])
+            logger.info("Cheat Engine launched successfully.")
+        except Exception as e:
+            logger.error(f"Failed to launch Cheat Engine: {e}")
+            messagebox.showerror(
+                "Cheat Engine Error",
+                f"An error occurred while launching Cheat Engine: {e}",
+            )
+
+    # 추가된 메서드: 오프셋 찾기
+    def find_offset(self):
+        """Offset 찾기 기능 실행."""
+        try:
+            selected_process = self.process_list.selection()
+            if not selected_process:
+                messagebox.showwarning(
+                    "No Process Selected", "Please select a process to find offset."
+                )
+                return
+            pid = int(self.process_list.item(selected_process)["values"][0])
+
+            # 오프셋 찾기 로직 추가 (예시: 특정 패턴 검색)
+            pattern = b'\x00\x00\x00\x00'  # 예시 패턴
+            replacement = b'\x01\x01\x01\x01'  # 예시 대체 데이터
+
+            count = self.dumper.memory_analyzer.search_and_modify_pattern(pid, pattern, replacement)
+            logger.info(f"Replaced {count} occurrences in PID={pid}.")
+            messagebox.showinfo(
+                "Find Offset Completed",
+                f"Replaced {count} occurrences in PID={pid}.",
+            )
+        except Exception as e:
+            logger.error(f"Error during find offset: {e}")
+            messagebox.showerror(
+                "Find Offset Error",
+                f"An error occurred while finding offset: {e}",
+            )

@@ -1,6 +1,6 @@
 import logging
-from mem_edit import Process
-from dump.base.memory_dumper import MemoryDumper  # MemoryDumper 임포트 추가
+from pymem import Pymem
+from dump.base.memory_dumper import MemoryDumper
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ class ProcessController:
         try:
             self.memory_dumper.dump_module_memory(pid, module_name)
             logger.info(f"Dumped memory for PID={pid}, Module={module_name}")
-        except Exception as e:
+        except Exception as e:  # pymem.exception.PymemException 제거
             logger.error(
                 f"Error dumping memory for PID={pid}, Module={module_name}: {e}"
             )

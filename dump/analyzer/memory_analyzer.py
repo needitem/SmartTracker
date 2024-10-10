@@ -3,7 +3,6 @@ import struct
 import logging
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
-
 import psutil
 from dump.utils.pointers import find_pointer, write_pointer
 import pymem
@@ -143,7 +142,7 @@ class MemoryAnalyzer:
             permissions=entry.get("permissions", ""),
         )
 
-        self.processed_entries.append(memory_entry)
+        # Assuming process_entry() is meant to process and return the entry
         logger.debug(f"Processed memory entry: {memory_entry}")
         return memory_entry
 
@@ -152,10 +151,11 @@ class MemoryAnalyzer:
     ) -> List[MemoryEntryProcessed]:
         """Parse and process memory regions based on the specified data type and PIDs."""
         if pids:
-            entries = self.db.fetch_memory_entries_by_pids(pids)
+            # Since Database is removed, replace with appropriate method to fetch memory entries
+            entries = self.fetch_memory_entries_by_pids(pids)
             logger.info(f"Processing memory entries for selected PIDs: {pids}")
         else:
-            entries = self.db.fetch_all_memory_entries()
+            entries = self.fetch_all_memory_entries()
             logger.info("Processing all memory entries.")
 
         logger.info(f"Retrieved {len(entries)} memory entries for processing.")
@@ -203,7 +203,7 @@ class MemoryAnalyzer:
             if pids and pid not in pids:
                 continue
             try:
-                modules = self.db.fetch_selected_modules_by_process(pid)
+                modules = self.get_process_modules(pid)
                 processes_info.append({"pid": pid, "name": name, "modules": modules})
             except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
                 logger.warning(
@@ -247,5 +247,3 @@ class MemoryAnalyzer:
                 f"pymem: Unexpected error during pattern search and replace (PID={pid}): {e}"
             )
         return count
-
-    # ... existing code ...

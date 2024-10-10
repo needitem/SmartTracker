@@ -7,15 +7,13 @@ from dump.logging.logging_config import setup_logging  # 로깅 설정 함수 �
 from dump.utils import admin  # 관리자 권한 함수 임포트
 from dump.base.memory_dumper import MemoryDumper
 from gui.process_selector.main_frame import ProcessSelector
-from gui.analysis_tab import AnalysisTab
-from gui.memory_analyzer import MemoryAnalyzer
+from dump.analyzer.memory_analyzer import MemoryAnalyzer  # 올바른 임포트 경로 유지
 
-# 로깅 설정 먼저 수행
 logger = setup_logging(
-    log_dir="logs", log_level=logging.WARNING
-)  # log_level을 WARNING으로 설정
+    log_dir="logs", log_level=logging.DEBUG  # DEBUG 레벨로 변경하여 상세 로그 캡처
+)  # log_level을 DEBUG로 설정
 
-# 애플리케이션이 관리자 권한으로 실행 중인지 확인 - 일반 사용자권한으로도 작동하는거 확인
+# 관리자 권한 확인 (필요 시 활성화)
 # admin.ensure_admin()
 
 # 로깅을 사용하여 관리자 권한 확인 결과 로그 기록
@@ -38,16 +36,11 @@ class Application(tk.Tk):
         notebook = ttk.Notebook(self)
         notebook.pack(fill=tk.BOTH, expand=True)
 
-        # Initialize AnalysisTab and add to notebook
-        self.analysis_tab = AnalysisTab(notebook, self.memory_analyzer)
-        notebook.add(self.analysis_tab, text="Analysis")
-
-        # Process Selector 탭 추가 (memory_dumper, memory_analyzer, analysis_tab 전달)
+        # Process Selector 탭 추가 (AnalysisTab 제거)
         process_selector = ProcessSelector(
             notebook,
             memory_dumper=self.memory_dumper,
             memory_analyzer=self.memory_analyzer,
-            analysis_tab=self.analysis_tab,
         )
         notebook.add(process_selector, text="Select Process")
 
@@ -61,7 +54,7 @@ def main():
         app.protocol("WM_DELETE_WINDOW", app.on_closing)
         app.mainloop()
     except Exception as e:
-        logger.exception("처리되지 않은 예외 발생:")
+        logger.exception("Unhandled exception occurred:")
         sys.exit(1)
 
 
