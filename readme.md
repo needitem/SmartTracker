@@ -1,13 +1,13 @@
 # SmartTracker
 
-SmartTracker is a Python-based application designed to analyze memory dumps, manage databases, and efficiently monitor system performance. It leverages powerful libraries to provide insightful diagnostics and logging capabilities, making it an essential tool for developers and system administrators.
+SmartTracker is a Python-based application designed to analyze memory dumps and efficiently monitor system performance. It leverages powerful libraries to provide insightful diagnostics and logging capabilities, making it an essential tool for developers and system administrators.
 
 ## Features
 
 - **Memory Analysis:** Analyze memory dumps to identify potential issues and optimize performance.
-- **Database Management:** Efficiently handle and interact with databases for seamless data storage and retrieval.
 - **System Monitoring:** Utilize `psutil` to monitor system resources and performance metrics.
 - **Logging:** Comprehensive logging for tracking application behavior and troubleshooting.
+- **Cheat Engine-like Functionality:** Inject Python scripts into target processes for dynamic memory manipulation.
 
 ## Installation
 
@@ -46,31 +46,57 @@ python main.py
 
 SmartTracker/  
 ├── dump/  
-│ ├── dump_analyzer.py  
-│ ├── memory_analyzer.py  
-│ ├── memory_dumper.py  
-│ ├── database.py  
-│ ├── memory_entry.py  
-│ ├── utils.py  
-│ └── init.py  
+│ ├── analyzer/  
+│ │ ├── memory_analyzer.py  
+│ ├── base/  
+│ │ ├── memory_dumper.py  
+│ ├── memory/  
+│ │ ├── memory_entry.py  
+│ ├── utils/  
+│ │ ├── pointers.py  
+│ ├── logging/  
+│ │ ├── logging_config.py  
+│ └── __init__.py  
 ├── gui/  
-│ ├── analyze_process.py  
-│ └── process_selector.py  
+│ ├── analyze_process/  
+│ │ ├── controllers/  
+│ │ │ ├── search_controller.py  
+│ │ ├── analysis_tab.py  
+│ │ ├── main_window.py  
+│ ├── process_selector/  
+│ │ ├── controllers/  
+│ │ │ ├── process_controller.py  
+│ │ │ ├── module_controller.py  
+│ │ ├── main_frame.py  
+│ └── __init__.py  
 ├── .gitignore  
 ├── requirements.txt  
 └── README.md  
 
-- **dump/**: Contains modules related to memory analysis and database interactions.
-  - **dump_analyzer.py**: Main script for analyzing memory dumps.
-  - **memory_analyzer.py**: Module for handling memory analysis tasks.
-  - **memory_dumper.py**: Module responsible for dumping memory from processes.
-  - **database.py**: Module for managing database operations.
-  - **memory_entry.py**: Dataclass representing a memory entry.
-  - **utils.py**: Utility functions for process-related operations.
-  - ****init**.py**: Initializes the dump package.
+- **drop/**: Contains modules related to memory analysis.
+  - **analyzer/**:
+    - **memory_analyzer.py**: Handles memory analysis tasks.
+  - **base/**:
+    - **memory_dumper.py**: Responsible for dumping memory from processes.
+  - **memory/**:
+    - **memory_entry.py**: Dataclass representing a memory entry.
+  - **utils/**:
+    - **pointers.py**: Utilities for pointer operations.
+  - **logging/**:
+    - **logging_config.py**: Configures logging settings.
+  - **__init__.py**: Initializes the dump package.
 - **gui/**: Contains graphical user interface components.
-  - **analyze_process.py**: GUI window for analyzing processes.
-  - **process_selector.py**: GUI component for selecting processes to analyze.
+  - **analyze_process/**:
+    - **controllers/**:
+      - **search_controller.py**: Handles search functionalities.
+    - **analysis_tab.py**: GUI tab for displaying analysis results.
+    - **main_window.py**: Main analysis window.
+  - **process_selector/**:
+    - **controllers/**:
+      - **process_controller.py**: Manages process dumping.
+      - **module_controller.py**: Manages module listings.
+    - **main_frame.py**: Main frame for the process selector.
+  - **__init__.py**: Initializes the GUI package.
 - **.gitignore**: Specifies files and directories to be ignored by Git.
 - **requirements.txt**: Lists Python dependencies required for the project.
 - **README.md**: Documentation and instructions for the project.

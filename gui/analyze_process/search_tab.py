@@ -1,100 +1,73 @@
-# Modified gui/analyze_process/search_tab.py
-
+import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
-import logging
+from typing import List, Dict, Any
 
-from dump.dump_analyzer import DumpAnalyzer
+from dump.analyzer.memory_analyzer import MemoryAnalyzer
+from dump.memory.memory_entry import MemoryEntryProcessed
+from gui.analyze_process.analysis_tab import AnalysisTab
 
 logger = logging.getLogger(__name__)
 
+
 class SearchTab(ttk.Frame):
-    def __init__(self, parent, dump_analyzer: DumpAnalyzer, analysis_tab):
+    def __init__(
+        self, parent, memory_analyzer: MemoryAnalyzer, analysis_tab: AnalysisTab
+    ):
         super().__init__(parent)
-        self.dump_analyzer = dump_analyzer
+        self.memory_analyzer = memory_analyzer
         self.analysis_tab = analysis_tab
         self.create_widgets()
 
     def create_widgets(self):
-        # Create search options
-        search_frame = ttk.Frame(self)
-        search_frame.pack(fill=tk.X, padx=10, pady=10)
+        """Create search widgets."""
+        self.search_label = ttk.Label(self, text="Search:")
+        self.search_label.pack(pady=5)
 
-        ttk.Label(search_frame, text="Search Term:").pack(side=tk.LEFT, padx=(0, 5))
-        self.search_entry = ttk.Entry(search_frame)
-        self.search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+        self.search_entry = ttk.Entry(self, width=50)
+        self.search_entry.pack(pady=5)
 
-        ttk.Button(search_frame, text="Search", command=self.perform_search).pack(side=tk.LEFT)
+        self.search_button = ttk.Button(
+            self, text="Search", command=self.perform_search
+        )
+        self.search_button.pack(pady=5)
 
-        # Create Treeview to display search results
-        self.table = ttk.Treeview(
+        self.results_tree = ttk.Treeview(
             self,
-            columns=("Address", "Offset", "Raw", "String", "Int", "Float", "Module"),
+            columns=("Address", "String", "Integer", "Float", "Module"),
             show="headings",
         )
-        for col in ("Address", "Offset", "Raw", "String", "Int", "Float", "Module"):
-            self.table.heading(col, text=col)
-            self.table.column(col, width=150, anchor="center")
-        self.table.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 0), pady=10)
-
-        # Add Scrollbars
-        scrollbar_y = ttk.Scrollbar(self, orient="vertical", command=self.table.yview)
-        scrollbar_x = ttk.Scrollbar(self, orient="horizontal", command=self.table.xview)
-        self.table.configure(
-            yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set
-        )
-        scrollbar_y.pack(side=tk.LEFT, fill=tk.Y, pady=10)
-        scrollbar_x.pack(side=tk.BOTTOM, fill=tk.X, padx=10)
+        self.results_tree.heading("Address", text="Address")
+        self.results_tree.heading("String", text="String")
+        self.results_tree.heading("Integer", text="Integer")
+        self.results_tree.heading("Float", text="Float")
+        self.results_tree.heading("Module", text="Module")
+        self.results_tree.pack(pady=10, fill=tk.BOTH, expand=True)
 
     def perform_search(self):
-        """Perform search based on the input term."""
-        query = self.search_entry.get().strip()
+        """Perform search using SearchController."""
+        query = self.search_entry.get()
         if not query:
-            logger.warning("Search query is empty.")
-            messagebox.showwarning("Search Warning", "Please enter a search term.")
+            messagebox.showwarning("Input Needed", "Please enter a search query.")
             return
 
-        logger.info(f"Performing search for term: {query}")
-        try:
-            results = self.dump_analyzer.analyze_dump()
-            filtered = [
-                entry for entry in results
-                if query.lower() in (entry.get("raw", "").lower()) or
-                   query.lower() in (entry.get("string", "").lower())
-            ]
-            self.display_results(filtered)
-            logger.info(f"Search completed. Found {len(filtered)} matching entries.")
-        except Exception as e:
-            logger.error(f"Error during search: {e}")
-            messagebox.showerror("Search Error", f"An error occurred during search: {e}")
+        results = self.memory_analyzer.search_memory_entries(query)
+        self.populate_results(results)
 
-    def display_results(self, entries):
-        """Display search results in the table."""
-        try:
-            # Clear existing data
-            for item in self.table.get_children():
-                self.table.delete(item)
+    def populate_results(self, results: List[MemoryEntryProcessed]):
+        """Populate search results in the treeview."""
+        for item in self.results_tree.get_children():
+            self.results_tree.delete(item)
 
-            # Load new data
-            for entry in entries:
-                self.table.insert(
-                    "",
-                    tk.END,
-                    values=(
-                        entry.get("address", ""),
-                        entry.get("offset", ""),
-                        entry.get("raw", ""),
-                        entry.get("string", ""),
-                        entry.get("integer", ""),
-                        entry.get("float_num", ""),
-                        entry.get("module", ""),
-                    ),
-                )
-                logger.debug(f"Displayed search entry: {entry}")
-
-            if not entries:
-                logger.info("No matching entries found.")
-                messagebox.showinfo("Search Results", "No matching entries found.")
-        except Exception as e:
-            logger.error(f"Failed to display search results: {e}")
-            messagebox.showerror("Display Error", f"An error occurred while displaying results: {e}")
+        for entry in results:
+            self.results_tree.insert(
+                "",
+                tk.END,
+                values=(
+                    entry.address,
+                    entry.string,
+                    entry.integer,
+                    entry.float_num,
+                    entry.module,
+                ),
+            )
