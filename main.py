@@ -50,6 +50,7 @@ class Application(tk.Tk):
 
 def main():
     try:
+        admin.ensure_admin()  # 관리자 권한 확인 및 활성화
         app = Application()
         app.protocol("WM_DELETE_WINDOW", app.on_closing)
         app.mainloop()
