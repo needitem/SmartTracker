@@ -32,12 +32,35 @@ class SearchTab(ttk.Frame):
         )
         self.search_button.pack(pady=5)
 
+        # Add ReSearch button
+        self.research_button = ttk.Button(
+            self, text="ReSearch", command=self.perform_research, state=tk.DISABLED
+        )
+        self.research_button.pack(pady=5)
+
+        # Add Data Type selection with 'All' option
+        self.data_type_label = ttk.Label(self, text="Data Type:")
+        self.data_type_label.pack(pady=5)
+
+        self.data_type_var = tk.StringVar()
+        self.data_type_combo = ttk.Combobox(
+            self,
+            textvariable=self.data_type_var,
+            values=["All", "Integer", "Float", "String"],
+            state="readonly",
+            width=20
+        )
+        self.data_type_combo.pack(pady=5)
+        self.data_type_combo.current(0)  # Set default to 'All'
+
+        # Modify Treeview to include 'Value' column
         self.results_tree = ttk.Treeview(
             self,
-            columns=("Address", "String", "Integer", "Float", "Module"),
+            columns=("Address", "Value", "String", "Integer", "Float", "Module"),
             show="headings",
         )
         self.results_tree.heading("Address", text="Address")
+        self.results_tree.heading("Value", text="Value")  # New column
         self.results_tree.heading("String", text="String")
         self.results_tree.heading("Integer", text="Integer")
         self.results_tree.heading("Float", text="Float")
@@ -47,12 +70,26 @@ class SearchTab(ttk.Frame):
     def perform_search(self):
         """Perform search using SearchController."""
         query = self.search_entry.get()
+        data_type = self.data_type_var.get()
         if not query:
             messagebox.showwarning("Input Needed", "Please enter a search query.")
             return
 
-        results = self.memory_analyzer.search_memory_entries(query)
+        results = self.memory_analyzer.search_memory_entries(query, data_type=data_type)
         self.populate_results(results)
+        self.research_button.config(state=tk.NORMAL)  # Enable ReSearch
+
+    def perform_research(self):
+        """Re-perform the last search."""
+        query = self.search_entry.get()
+        data_type = self.data_type_var.get()
+        if not query:
+            messagebox.showwarning("Input Needed", "Please enter a search query.")
+            return
+
+        results = self.memory_analyzer.search_memory_entries(query, data_type=data_type)
+        self.populate_results(results)
+        logger.info("ReSearch completed.")
 
     def populate_results(self, results: List[MemoryEntryProcessed]):
         """Populate search results in the treeview."""
@@ -60,14 +97,23 @@ class SearchTab(ttk.Frame):
             self.results_tree.delete(item)
 
         for entry in results:
+            # Determine the value to display in the 'Value' column
+            if entry.integer is not None:
+                value = entry.integer
+            elif entry.float_num is not None:
+                value = entry.float_num
+            else:
+                value = entry.string if entry.string else ""
+
             self.results_tree.insert(
                 "",
                 tk.END,
                 values=(
                     entry.address,
-                    entry.string,
-                    entry.integer,
-                    entry.float_num,
+                    value,
+                    entry.string if entry.string else "",
+                    entry.integer if entry.integer is not None else "",
+                    entry.float_num if entry.float_num is not None else "",
                     entry.module,
                 ),
             )

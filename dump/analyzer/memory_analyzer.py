@@ -373,3 +373,23 @@ class MemoryAnalyzer:
         except Exception as e:
             logger.error(f"Error searching memory for string value '{value}' in PID={pid}: {e}")
             return []
+
+    def search_memory_entries(self, query: str, data_type: str = "All") -> List[MemoryEntryProcessed]:
+        """Search memory entries based on query and data type."""
+        results = []
+        try:
+            for proc in psutil.process_iter(['pid', 'name']):
+                pid = proc.info['pid']
+                name = proc.info['name']
+                memory_entries = self.dumper.dump_module_memory(pid, name)
+                for entry in memory_entries:
+                    if data_type == "All" or (
+                        (data_type == "Integer" and entry.integer is not None) or
+                        (data_type == "Float" and entry.float_num is not None) or
+                        (data_type == "String" and entry.string is not None)
+                    ):
+                        results.append(entry)
+        except Exception as e:
+            logger.error(f"Error during memory search: {e}")
+
+        return results
