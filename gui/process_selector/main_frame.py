@@ -36,7 +36,7 @@ class ProcessSelector(ttk.Frame):
         self.process_controller = ProcessController(
             memory_dumper=self.dumper
         )  # Initialize with memory_dumper
-        self.module_controller = ModuleController()  # Removed database parameter
+        self.module_controller = ModuleController(memory_dumper=self.dumper)  # MemoryDumper 전달
         self.search_controller = SearchController(
             memory_analyzer, None  # AnalysisTab 제거
         )  # Pass required arguments
@@ -180,9 +180,9 @@ class ProcessSelector(ttk.Frame):
             messagebox.showerror("Error", f"Error populating process list: {e}")
 
     def insert_process_modules(self, pid: int):
-        """특정 프로세스의 모든 모듈을 데이터베이스에 삽입합니다."""
+        """특정 프로세스의 모든 모듈을 표시합니다."""
         try:
-            modules = self.get_windows_process_modules(pid)
+            modules = self.module_controller.fetch_modules_by_pid(pid)  # ModuleController 사용
             if not modules:
                 logger.info(f"PID={pid}에 대한 모듈이 없습니다.")
                 return
@@ -191,10 +191,11 @@ class ProcessSelector(ttk.Frame):
                 module_name = module.get("name", "Unknown")
                 base_address = module.get("base_address", "0x0")
                 size = module.get("size", 0)
-                # Handle module insertion without database
-                # Example: Insert into Treeview or other UI components
+                # Treeview에 모듈 삽입
                 self.module_list.insert(
-                    "", tk.END, values=(module_name, base_address, size)
+                    "",
+                    tk.END,
+                    values=(module_name, base_address, size),
                 )
                 logger.debug(
                     f"Inserted module: Name={module_name}, Base Address={base_address}, Size={size}"
