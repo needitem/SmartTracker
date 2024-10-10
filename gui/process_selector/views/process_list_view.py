@@ -6,10 +6,10 @@ logger = logging.getLogger(__name__)
 
 class ProcessListView(ttk.Treeview):
     def __init__(self, parent, select_callback):
-        super().__init__(parent, columns=("PID", "Name", "Base Address"), show="headings")
+        # "Base Address" 컬럼을 제거하고 "PID"와 "Name"만 사용
+        super().__init__(parent, columns=("PID", "Name"), show="headings")
         self.heading("PID", text="PID", command=lambda: self.sort_column("PID", False))
         self.heading("Name", text="Process Name", command=lambda: self.sort_column("Name", False))
-        self.heading("Base Address", text="Base Address", command=lambda: self.sort_column("Base Address", False))
         self.bind("<<TreeviewSelect>>", select_callback)
         self.pack(fill=tk.BOTH, expand=True)
 

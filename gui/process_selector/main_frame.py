@@ -97,18 +97,13 @@ class ProcessSelector(ttk.Frame):
                     except Exception as close_e:
                         logger.error(f"Error closing process PID={pid}: {close_e}")
 
-                    base_address_str = self.compute_base_address(proc)
-
-                    # 프로세스 목록에 삽입
+                    # 프로세스 목록에 "PID"와 "Name"만 삽입
                     self.process_list.insert(
-                        "", tk.END, values=(pid, name, base_address_str)
+                        "", tk.END, values=(pid, name)
                     )
                     logger.debug(
-                        f"Inserted process: PID={pid}, Name={name}, Base Address={base_address_str}"
+                        f"Inserted process: PID={pid}, Name={name}"
                     )
-
-                    # **모듈 삽입 제거**
-                    # self.insert_process_modules(pid)  # 이 줄을 제거
 
                 except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
                     logger.warning(f"프로세스 {proc}에 접근할 수 없습니다: {e}")
@@ -118,13 +113,13 @@ class ProcessSelector(ttk.Frame):
             messagebox.showerror("Error", f"Error populating process list: {e}")
 
     def on_process_select(self, event):
-        """Display modules of the selected process when a process is selected."""
+        """선택된 프로세스의 모듈을 로드하고 표시합니다."""
         selected_item = self.process_list.selection()
         if not selected_item:
             return
-        pid, name, _ = self.process_list.item(selected_item, "values")
+        pid, name = self.process_list.item(selected_item, "values")
         logger.info(f"Selected PID={pid}, Process={name}")
-        self.populate_module_list(int(pid))  # Load modules for the selected process
+        self.populate_module_list(int(pid))  # 선택된 프로세스에 대한 모듈 로드
         self.button_frame.dump_button.config(state=tk.NORMAL)
 
     def populate_module_list(self, pid: int):
@@ -155,6 +150,7 @@ class ProcessSelector(ttk.Frame):
             logger.error(f"Error inserting modules for PID={pid}: {e}")
 
     def dump_selected_process(self):
+        """선택된 프로세스와 모듈에 대한 메모리 덤프를 시작합니다."""
         selected_process = self.process_list.selection()
         selected_module = self.module_list.selection()
 
@@ -169,12 +165,12 @@ class ProcessSelector(ttk.Frame):
         pid = int(self.process_list.item(selected_process)["values"][0])
         module_name = self.module_list.item(selected_module)["values"][0]
 
-        # Open the Dump Memory Window
+        # DumpMemoryWindow 열기
         DumpMemoryWindow(self, pid, module_name)
         logger.info(f"Opened Dump Memory window for PID={pid}, Module={module_name}.")
 
     def run_analysis(self):
-        """Perform memory analysis and display results."""
+        """메모리 분석을 수행하고 결과를 표시합니다."""
         try:
             if not self.dumped_pids:
                 logger.warning("No PIDs selected for analysis.")
@@ -184,7 +180,7 @@ class ProcessSelector(ttk.Frame):
                 )
                 return
 
-            # Perform analysis using memory_analyzer
+            # 메모리 분석 수행 (기능이 제거됨)
             logger.info("Analysis functionality has been removed.")
             messagebox.showinfo(
                 "Analysis Completed",
@@ -197,8 +193,7 @@ class ProcessSelector(ttk.Frame):
             )
 
     def compute_base_address(self, proc: psutil.Process) -> str:
-        """Compute the base address for a given process."""
-        # Replace 'get_process_modules' with 'get_modules'
+        """특정 프로세스의 베이스 주소를 계산합니다."""
         modules = self.dumper.get_modules(proc.pid)  # 수정된 메서드 호출
         if modules:
             first_module = modules[0]
@@ -259,6 +254,7 @@ class ProcessSelector(ttk.Frame):
             )
 
     def modify_memory(self):
+        """선택된 프로세스와 모듈의 메모리를 수정합니다."""
         selected_process = self.process_list.selection()
         selected_module = self.module_list.selection()
 
@@ -273,7 +269,7 @@ class ProcessSelector(ttk.Frame):
         pid = int(self.process_list.item(selected_process)["values"][0])
         module_name = self.module_list.item(selected_module)["values"][0]
 
-        # Open the Modify Memory Window
+        # ModifyMemoryWindow 열기
         ModifyMemoryWindow(self, pid, module_name)
         logger.info(f"Opened Modify Memory window for PID={pid}, Module={module_name}.")
 

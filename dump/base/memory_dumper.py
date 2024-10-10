@@ -83,9 +83,12 @@ class MemoryDumper:
             # 메모리 덤프 로직 구현 (예시)
             data = pm.read_bytes(base_address, size)
 
+            logger.debug(f"Dumped {len(data)} bytes from PID={pid}, Module={module_name}.")
+
             # 메모리 데이터를 처리하여 MemoryEntryProcessed 리스트로 변환
             entries = self.process_memory_dump(data, base_address, pid, module_name, bit_size, endian)
             pm.close_process()
+            logger.debug(f"Processed {len(entries)} memory entries.")
             return entries
         except (KeyError, Exception) as e:
             logger.error(f"Error dumping memory for PID={pid}, Module={module_name}: {e}")
@@ -118,11 +121,13 @@ class MemoryDumper:
     def process_memory_dump(self, data: bytes, base_address: int, pid: int, module_name: str, bit_size: int, endian: str) -> List[MemoryEntryProcessed]:
         """덤프된 메모리 데이터를 처리하여 MemoryEntryProcessed 리스트로 변환합니다."""
         entries = []
-        # 여기에서 메모리 데이터를 파싱하여 MemoryEntryProcessed 객체를 생성합니다.
-        # 간단한 예시로 4바이트씩 읽어 정수값으로 저장
+        # 예시: 4바이트씩 읽어 정수값으로 저장
         for i in range(0, len(data), 4):
             try:
                 raw = data[i:i+4]
+                if len(raw) < 4:
+                    raw = raw.ljust(4, b'\x00')  # 부족한 바이트는 0으로 패딩
+
                 integer = int.from_bytes(raw, byteorder=endian, signed=True)
                 entry = MemoryEntryProcessed(
                     address=hex(base_address + i),
@@ -132,10 +137,10 @@ class MemoryDumper:
                     integer=integer,
                     float_num=None,
                     module=module_name,
-                    timestamp="",
+                    timestamp="",  # 필요에 따라 타임스탬프 추가
                     process_id=pid,
-                    process_name="",  # 필요시 채워주세요
-                    permissions="",    # 필요시 채워주세요
+                    process_name=self.get_process_name(pid),
+                    permissions=self.get_permissions(pid, base_address + i),
                     processed_string=None,
                     is_valid=False,
                     tags=None
@@ -145,6 +150,21 @@ class MemoryDumper:
                 logger.error(f"Error processing memory at offset {i}: {e}")
         logger.debug(f"Processed {len(entries)} memory entries.")
         return entries
+
+    def get_process_name(self, pid: int) -> str:
+        """프로세스 이름을 가져옵니다."""
+        try:
+            process = psutil.Process(pid)
+            return process.name()
+        except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+            logger.error(f"Unable to retrieve process name for PID={pid}: {e}")
+            return "Unknown"
+
+    def get_permissions(self, pid: int, addr: int) -> str:
+        """메모리 주소의 권한을 가져옵니다."""
+        # 권한을 가져오는 로직 구현 (예시)
+        # 실제 구현은 Windows API 사용 필요
+        return "READWRITE"  # 예시 값
 
     def get_modules(self, pid: int) -> List[Dict[str, Any]]:
         """Alias for list_modules for backward compatibility."""

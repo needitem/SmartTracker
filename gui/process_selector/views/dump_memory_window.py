@@ -209,7 +209,10 @@ class DumpMemoryWindow(tk.Toplevel):
         try:
             bit_size = self.bit_size_var.get()
             endian = self.endian_var.get()
+            logger.debug(f"Starting dump: PID={self.pid}, Module={self.module_name}, Bit Size={bit_size}, Endianness={endian}")
             dumped_entries = self.master.dumper.dump_module_memory(self.pid, self.module_name, bit_size, endian)
+            logger.debug(f"dumped_entries received: {len(dumped_entries)} entries.")
+
             if not dumped_entries:
                 logger.info(
                     f"No memory entries dumped for PID={self.pid}, Module={self.module_name}."
@@ -267,6 +270,7 @@ class DumpMemoryWindow(tk.Toplevel):
                     ", ".join(entry.tags) if entry.tags else ""
                 )
             )
+            logger.debug(f"Inserting entry into treeview: {entry}")
 
         logger.info(f"Inserted {len(entries)} memory entries into the tree view.")
 
