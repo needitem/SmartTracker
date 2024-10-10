@@ -1,9 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, List, Tuple
-import logging
-
-logger = logging.getLogger(__name__)
-
+from typing import Optional, List
 
 @dataclass
 class MemoryEntry:

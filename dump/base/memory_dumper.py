@@ -80,12 +80,12 @@ class MemoryDumper:
             base_address = int(module["base_address"], 16)
             size = module["size"]
 
-            # 메모리 덤프 로직 구현
+            # 메모리 덤프 로직 구현 (예시)
             data = pm.read_bytes(base_address, size)
-            pm.close_process()
 
             # 메모리 데이터를 처리하여 MemoryEntryProcessed 리스트로 변환
             entries = self.process_memory_dump(data, base_address, pid, module_name, bit_size, endian)
+            pm.close_process()
             return entries
         except (KeyError, Exception) as e:
             logger.error(f"Error dumping memory for PID={pid}, Module={module_name}: {e}")
@@ -116,84 +116,35 @@ class MemoryDumper:
             return 0
 
     def process_memory_dump(self, data: bytes, base_address: int, pid: int, module_name: str, bit_size: int, endian: str) -> List[MemoryEntryProcessed]:
-        """덤프된 메모리를 처리된 엔트리 리스트로 변환."""
-        processed_entries = []
-        try:
-            chunk_size = bit_size // 8
-            endian_format = '<' if endian == "little" else '>'
-            handle = self.get_handle(pid)
-            for offset in range(0, len(data), chunk_size):
-                chunk = data[offset:offset + chunk_size]
-                if len(chunk) < chunk_size:
-                    continue
-
-                # Initialize default fields
-                string_val = None
-                integer_val = None
-                float_val = None
-
-                # Extract Integer
-                try:
-                    if bit_size == 8:
-                        integer_val = struct.unpack(endian_format + 'B', chunk)[0]
-                    elif bit_size == 16:
-                        integer_val = struct.unpack(endian_format + 'H', chunk)[0]
-                    elif bit_size == 32:
-                        integer_val = struct.unpack(endian_format + 'I', chunk)[0]
-                    elif bit_size == 64:
-                        integer_val = struct.unpack(endian_format + 'Q', chunk)[0]
-                    else:
-                        integer_val = struct.unpack(endian_format + 'I', chunk)[0]
-                except struct.error:
-                    integer_val = None
-
-                # Extract String
-                try:
-                    decoded_str = chunk.decode('utf-8', errors='ignore').strip()
-                    if decoded_str:
-                        string_val = decoded_str
-                except:
-                    string_val = None
-
-                # Extract Float (if applicable)
-                try:
-                    if bit_size == 32:
-                        float_val = struct.unpack(endian_format + 'f', chunk)[0]
-                    elif bit_size == 64:
-                        float_val = struct.unpack(endian_format + 'd', chunk)[0]
-                except struct.error:
-                    float_val = None
-
-                # Retrieve Permissions
-                if handle:
-                    protect_flags = self.get_memory_protection(handle, base_address + offset)
-                else:
-                    protect_flags = 0  # 기본값 설정
-                permissions = get_permissions(protect=protect_flags)
-
-                # Create MemoryEntryProcessed
-                memory_entry = MemoryEntryProcessed(
-                    address=hex(base_address + offset),
-                    offset=hex(offset),
-                    raw=chunk.hex(),
-                    string=string_val,
-                    integer=integer_val,
-                    float_num=float_val,
+        """덤프된 메모리 데이터를 처리하여 MemoryEntryProcessed 리스트로 변환합니다."""
+        entries = []
+        # 여기에서 메모리 데이터를 파싱하여 MemoryEntryProcessed 객체를 생성합니다.
+        # 간단한 예시로 4바이트씩 읽어 정수값으로 저장
+        for i in range(0, len(data), 4):
+            try:
+                raw = data[i:i+4]
+                integer = int.from_bytes(raw, byteorder=endian, signed=True)
+                entry = MemoryEntryProcessed(
+                    address=hex(base_address + i),
+                    offset=hex(i),
+                    raw=raw.hex(),
+                    string=None,
+                    integer=integer,
+                    float_num=None,
                     module=module_name,
-                    timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    timestamp="",
                     process_id=pid,
-                    process_name=get_process_name(pid) or "Unknown",
-                    permissions=permissions,
-                    processed_string=string_val.upper() if string_val else "",
-                    is_valid=bool(integer_val) if integer_val is not None else False,
-                    tags=["valid"] if bool(integer_val) else ["invalid"],
+                    process_name="",  # 필요시 채워주세요
+                    permissions="",    # 필요시 채워주세요
+                    processed_string=None,
+                    is_valid=False,
+                    tags=None
                 )
-                processed_entries.append(memory_entry)
-            if handle:
-                ctypes.windll.kernel32.CloseHandle(handle)
-        except Exception as e:
-            logger.error(f"Error processing memory dump: {e}")
-        return processed_entries
+                entries.append(entry)
+            except Exception as e:
+                logger.error(f"Error processing memory at offset {i}: {e}")
+        logger.debug(f"Processed {len(entries)} memory entries.")
+        return entries
 
     def get_modules(self, pid: int) -> List[Dict[str, Any]]:
         """Alias for list_modules for backward compatibility."""
