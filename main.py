@@ -24,7 +24,7 @@ class Application(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Memory Analyzer")
-        self.geometry("800x600")
+        self.geometry("1200x800")
 
         # Initialize MemoryDumper
         self.memory_dumper = MemoryDumper()  # Removed db parameter
@@ -32,17 +32,17 @@ class Application(tk.Tk):
         # Initialize MemoryAnalyzer
         self.memory_analyzer = MemoryAnalyzer()
 
-        # 노트북 생성
-        notebook = ttk.Notebook(self)
-        notebook.pack(fill=tk.BOTH, expand=True)
-
-        # Process Selector 탭 추가 (AnalysisTab 제거)
+        # Process Selector 생성
         process_selector = ProcessSelector(
-            notebook,
+            parent=self,
             memory_dumper=self.memory_dumper,
             memory_analyzer=self.memory_analyzer,
         )
-        notebook.add(process_selector, text="Select Process")
+        process_selector.grid(row=0, column=0, sticky="nsew")
+
+        # 창의 행과 열을 확장 가능하게 설정
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
     def on_closing(self):
         self.destroy()

@@ -26,10 +26,11 @@ class ModifyMemoryWindow(tk.Toplevel):
     def create_widgets(self):
         """GUI 위젯을 생성합니다."""
         # 프로세스 및 모듈 정보 레이블
-        tk.Label(self, text=f"Modify Memory for PID={self.pid}, Module={self.module_name}", font=("Arial", 12, "bold")).pack(pady=10)
+        label = ttk.Label(self, text=f"Modify Memory for PID={self.pid}, Module={self.module_name}", font=("Arial", 12, "bold"))
+        label.grid(row=0, column=0, columnspan=2, pady=10)
 
         # DLL 선택 드롭다운
-        tk.Label(self, text="Select DLL:").pack(pady=5)
+        ttk.Label(self, text="Select DLL:").grid(row=1, column=0, pady=5, sticky=tk.E)
         self.dll_var = tk.StringVar()
         try:
             modules = self.pm.list_modules()
@@ -45,27 +46,27 @@ class ModifyMemoryWindow(tk.Toplevel):
             state="readonly",
             width=50
         )
-        self.dll_combo.pack(pady=5)
+        self.dll_combo.grid(row=1, column=1, pady=5, sticky=tk.W)
         if dll_names:
             self.dll_combo.current(0)  # 기본값 설정
 
         # 포인터 경로 입력 필드
-        tk.Label(self, text="Pointer Offsets (comma-separated):").pack(pady=5)
+        tk.Label(self, text="Pointer Offsets (comma-separated):").grid(row=2, column=0, pady=5, sticky=tk.E)
         self.ptr_offsets_var = tk.StringVar()
         self.ptr_offsets_entry = ttk.Entry(self, textvariable=self.ptr_offsets_var, width=50)
-        self.ptr_offsets_entry.pack(pady=5)
-        tk.Label(self, text="Example: 0x10, 0x20, 0x30").pack(pady=2)
+        self.ptr_offsets_entry.grid(row=2, column=1, pady=5, sticky=tk.W)
+        tk.Label(self, text="Example: 0x10, 0x20, 0x30").grid(row=3, column=0, columnspan=2, pady=2)
 
         # 최종 주소 표시 레이블
         self.final_addr_label = tk.Label(self, text="Final Address: None", font=("Arial", 10, "italic"))
-        self.final_addr_label.pack(pady=5)
+        self.final_addr_label.grid(row=4, column=0, columnspan=2, pady=5)
 
         # 주소 가져오기 버튼
         self.get_addr_button = ttk.Button(self, text="Get Address", command=self.get_final_address)
-        self.get_addr_button.pack(pady=5)
+        self.get_addr_button.grid(row=5, column=0, columnspan=2, pady=5)
 
         # 값 타입 선택 드롭다운
-        tk.Label(self, text="Value Type:").pack(pady=5)
+        tk.Label(self, text="Value Type:").grid(row=6, column=0, pady=5, sticky=tk.E)
         self.value_type_var = tk.StringVar()
         value_types = ["Byte", "2-byte Integer", "4-byte Integer", "Float", "Double", "String"]
         self.value_type_combo = ttk.Combobox(
@@ -75,21 +76,28 @@ class ModifyMemoryWindow(tk.Toplevel):
             state="readonly",
             width=20
         )
-        self.value_type_combo.pack(pady=5)
+        self.value_type_combo.grid(row=6, column=1, pady=5, sticky=tk.W)
         self.value_type_combo.current(0)  # 기본값 설정
 
         # 새로운 값 입력 필드
-        tk.Label(self, text="New Value:").pack(pady=5)
+        tk.Label(self, text="New Value:").grid(row=7, column=0, pady=5, sticky=tk.E)
         self.value_var = tk.StringVar()
         self.value_entry = ttk.Entry(self, textvariable=self.value_var, width=30)
-        self.value_entry.pack(pady=5)
+        self.value_entry.grid(row=7, column=1, pady=5, sticky=tk.W)
 
         # 메모리 인젝션 버튼
         self.inject_button = ttk.Button(self, text="Memory Injection", command=self.inject_memory)
-        self.inject_button.pack(pady=20)
+        self.inject_button.grid(row=8, column=0, columnspan=2, pady=20)
 
         # 닫기 버튼
-        tk.Button(self, text="Close", command=self.destroy).pack(pady=10)
+        ttk.Button(self, text="Close", command=self.destroy).grid(row=9, column=0, columnspan=2, pady=10)
+
+        # 행과 열의 확장성을 위해 weight 설정
+        self.grid_rowconfigure(0, weight=0)
+        for i in range(1, 10):
+            self.grid_rowconfigure(i, weight=0)
+        self.grid_columnconfigure(0, weight=0)
+        self.grid_columnconfigure(1, weight=1)
 
     def get_final_address(self):
         """최종 주소를 계산하고 레이블에 표시합니다."""

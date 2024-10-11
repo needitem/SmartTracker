@@ -191,28 +191,42 @@ class ProcessSelector(ttk.Frame):
         self.dumped_pids = set()
         self.sort_orders = {}
 
+        # grid layout 설정
+        self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        self.parent.grid_rowconfigure(0, weight=1)
+        self.parent.grid_columnconfigure(0, weight=1)
+
         self.create_widgets()
         self.populate_process_list()
 
     def create_widgets(self):
-        # Create Process List View
-        self.process_list = ProcessListView(
-            self,
-            self.on_process_select,
-            width=300,   # Specify desired width
-            height=20    # Specify desired height (number of visible rows)
-        )
-
-        # Create Module List View
-        self.module_list = ModuleListView(self, on_select_callback=None, width=400, height=20)
-
-        # Create Button Frame
+        # 버튼 프레임을 grid로 배치 (상단)
         self.button_frame = ButtonFrame(
             self,
             modify_memory_callback=self.modify_memory,
             find_offset_callback=self.find_offset,
-            dump_callback=self.dump_selected_process
+            dump_callback=self.dump_selected_process,
+            refresh_callback=self.populate_process_list
         )
+        self.button_frame.grid(row=0, column=0, columnspan=2, pady=(0, 10), sticky="ew")
+
+        # Process List View를 grid로 배치 (왼쪽)
+        self.process_list = ProcessListView(
+            self,
+            self.on_process_select,
+            width=300,   # 원하는 너비 설정
+            height=20    # 표시될 행 수
+        )
+        self.process_list.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
+
+        # Module List View를 grid로 배치 (오른쪽)
+        self.module_list = ModuleListView(self, on_select_callback=None, width=400, height=20)
+        self.module_list.grid(row=1, column=1, padx=5, pady=5, sticky="nsew")
+
+        # 행과 열의 확장성을 위해 weight 설정
+        self.rowconfigure(1, weight=1)
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
 
     def populate_process_list(self):
         """프로세스 목록을 채우고 데이터베이스에 프로세스와 모듈을 저장합니다."""
@@ -246,7 +260,7 @@ class ProcessSelector(ttk.Frame):
                     except Exception as close_e:
                         logger.error(f"Error closing process PID={pid}: {close_e}")
 
-                    # 프로세스 목록에 "PID"와 "Name"만 삽입
+                    # 프로세스 목록에 "PID"와 "Name" 삽입
                     self.process_list.insert(
                         "", tk.END, values=(pid, name)
                     )

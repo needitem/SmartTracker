@@ -21,26 +21,21 @@ class ProcessListView(ttk.Treeview):
         # Bind the selection event to the callback
         self.bind("<<TreeviewSelect>>", on_select_callback)
 
-        # Pack the Treeview into the parent frame
-        self.pack(fill=tk.BOTH, expand=True)
-
     def sort_column(self, col, reverse):
-        """컬럼을 정렬하는 메서드."""
+        """Sort the treeview based on a given column."""
         try:
-            # 모든 항목을 가져와 정렬할 리스트 생성
+            # Get all items and sort them
+            data = [(self.set(child, col), child) for child in self.get_children('')]
             if col == "PID":
-                data = [(int(self.set(child, col)), child) for child in self.get_children('')]
+                data.sort(key=lambda t: int(t[0]) if t[0].isdigit() else 0, reverse=reverse)
             else:
-                data = [(self.set(child, col).lower(), child) for child in self.get_children('')]
+                data.sort(reverse=reverse)
 
-            # 정렬
-            data.sort(reverse=reverse)
-
-            # 정렬된 순서대로 Treeview 재배치
+            # Rearrange items in sorted order
             for index, (val, child) in enumerate(data):
                 self.move(child, '', index)
 
-            # 다음 클릭 시 역순으로 정렬되도록 설정
+            # Toggle the sort order for the next click
             self.heading(col, command=lambda: self.sort_column(col, not reverse))
         except Exception as e:
             logger.error(f"Error sorting column {col}: {e}")
