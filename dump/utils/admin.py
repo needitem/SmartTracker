@@ -46,14 +46,28 @@ def ensure_admin():
     Ensure the script is running with administrator privileges.
     If not, attempt to relaunch with elevated rights.
     """
-    if not is_admin():
-        logger.info("Administrator privileges not detected. Attempting to elevate.")
-        try:
-            run_as_admin()
-            sys.exit(0)
-        except Exception as e:
-            logger.error(f"Failed to acquire administrator privileges: {e}")
-            print(f"Error: Failed to acquire administrator privileges:\n{e}")
-            sys.exit(1)
-    else:
-        logger.debug("Administrator privileges confirmed.")
+    try:
+        if not is_admin():
+            logger.debug("Administrator privileges not detected. Attempting to relaunch as admin.")
+            script = os.path.abspath(sys.argv[0])
+            params = " ".join([f'"{arg}"' for arg in sys.argv[1:]])
+            result = ctypes.windll.shell32.ShellExecuteW(
+                None,
+                "runas",
+                sys.executable,
+                f'"{script}" {params}',
+                None,
+                1,
+            )
+            if result <= 32:
+                logger.error(f"Failed to relaunch with admin privileges. ShellExecuteW returned: {result}")
+                messagebox.showerror("Error", "Failed to acquire administrator privileges.")
+            else:
+                logger.info("Relaunched script with administrator privileges.")
+            sys.exit(0)  # Exit the original process after relaunching
+        else:
+            logger.debug("Running with administrator privileges.")
+    except Exception as e:
+        logger.error(f"Exception occurred in ensure_admin: {e}")
+        messagebox.showerror("Error", f"An error occurred while trying to acquire administrator privileges:\n{e}")
+        sys.exit(1)

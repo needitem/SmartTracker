@@ -4,10 +4,11 @@ import logging
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 import psutil
-from dump.utils.pointers import find_pointer, write_pointer
 import pymem
 from pymem import Pymem
+from dump.utils.pointers import find_pointer, write_pointer
 from dump.memory.memory_entry import MemoryEntryProcessed
+from capstone import Cs, CS_ARCH_X86, CS_MODE_32, CS_MODE_64
 
 logger = logging.getLogger(__name__)
 
@@ -32,350 +33,12 @@ class MemoryEntryProcessed:
 
 class MemoryAnalyzer:
     def __init__(self):
-        # Removed Database dependency
         pass
 
-    def get_module_base_address(self, module_name: str) -> Optional[int]:
-        """Retrieve the base address of a given module."""
-        # Implement alternative logic to retrieve module information using pymem
-        try:
-            for proc in psutil.process_iter(["pid", "name"]):
-                if proc.name().lower() == module_name.lower():
-                    pm = Pymem(proc.pid)
-                    for module in pm.list_modules():
-                        if module.name.lower() == module_name.lower():
-                            base_address = int(module.lpBaseOfDll)
-                            pm.close_process()
-                            return base_address
-                    pm.close_process()
-        except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
-            logger.warning(
-                f"Cannot access process psutil.Process(pid={proc.pid}, name='{proc.name()}'): {e}"
-            )
-        return None
+    # 기존 메서드들...
 
-    def extract_values(
-        self, raw_data: bytes
-    ) -> Tuple[Optional[str], Optional[int], Optional[float]]:
-        """Extract string, integer, and float values from raw data."""
-        # Extract string: meaningful ASCII strings (4+ chars, no special chars)
-        try:
-            decoded_str = raw_data.decode("utf-8", errors="ignore")
-            meaningful_strings = re.findall(r"\b[A-Za-z0-9]{4,}\b", decoded_str)
-            string_val = ", ".join(meaningful_strings) if meaningful_strings else None
-        except Exception as e:
-            logger.error(f"Failed to decode string from raw data: {e}")
-            string_val = None
-
-        # Extract integer (signed 4 bytes)
-        try:
-            if len(raw_data) >= 4:
-                int_val = struct.unpack("<i", raw_data[:4])[0]
-            else:
-                int_val = None
-        except struct.error as e:
-            logger.error(f"Failed to unpack integer: {e}")
-            int_val = None
-
-        # Extract float (4 bytes)
-        try:
-            if len(raw_data) >= 4:
-                float_val = struct.unpack("<f", raw_data[:4])[0]
-            else:
-                float_val = None
-        except struct.error as e:
-            logger.error(f"Failed to unpack float: {e}")
-            float_val = None
-
-        return string_val, int_val, float_val
-
-    def process_entry(
-        self, entry: Dict[str, Any], proc: psutil.Process
-    ) -> Optional[MemoryEntryProcessed]:
-        """Process a single memory entry."""
-        address_str = entry.get("address")
-        if address_str and isinstance(address_str, str):
-            try:
-                address = int(address_str, 16)
-            except ValueError:
-                logger.error(
-                    f"Invalid address format for entry ID {entry.get('id')}: {address_str}"
-                )
-                return None
-        else:
-            logger.warning(
-                f"Address is missing or not a string for entry ID {entry.get('id')}. Skipping."
-            )
-            return None
-
-        module = entry.get("module", "Unknown")
-        base_address = self.get_module_base_address(module)
-        if base_address is None:
-            logger.warning(
-                f"No base address found for module {module}. Skipping entry ID {entry.get('id')}."
-            )
-            return None
-
-        offset = address - base_address
-        if offset < 0:
-            logger.warning(
-                f"Negative offset calculated for entry ID {entry.get('id')}. Skipping."
-            )
-            return None
-
-        raw_data = bytes.fromhex(entry.get("raw", ""))
-        string_val, int_val, float_val = self.extract_values(raw_data)
-
-        # Enhanced MemoryEntry with additional details
-        memory_entry = MemoryEntryProcessed(
-            address=address_str,
-            offset=hex(offset),
-            raw=entry.get("raw", ""),
-            string=string_val,
-            integer=int_val,
-            float_num=float_val,
-            module=module,
-            timestamp=entry.get("timestamp", ""),
-            process_id=entry.get("process_id", 0),
-            process_name=entry.get("process_name", "Unknown"),
-            permissions=entry.get("permissions", ""),
-        )
-
-        # Assuming process_entry() is meant to process and return the entry
-        logger.debug(f"Processed memory entry: {memory_entry}")
-        return memory_entry
-
-    def parse_and_process_memory_regions(
-        self, data_type: str = "All", pids: Optional[List[int]] = None
-    ) -> List[Dict[str, Any]]:
-        """Parse and process memory regions based on the specified data type and PIDs."""
-        results = []
-        try:
-            if pids:
-                processes_info = self.get_all_processes(pids)
-            else:
-                processes_info = self.get_all_processes()
-
-            for proc_info in processes_info:
-                pid = proc_info["pid"]
-                name = proc_info["name"]
-                modules = proc_info["modules"]
-
-                for module in modules:
-                    module_name = module["name"]
-                    base_address = int(module["base_address"], 16)
-                    size = module["size"]
-
-                    try:
-                        pm = Pymem(pid)
-                        data = pm.read_bytes(base_address, size)
-                        pm.close_process()
-
-                        # Depending on data_type, call the appropriate search method
-                        if data_type == "Integer":
-                            int_matches = self.find_int_in_data(data, base_address)
-                            for match in int_matches:
-                                results.append({
-                                    "address": match,
-                                    "module": module_name,
-                                    "data_type": "Integer"
-                                })
-                        elif data_type == "Float":
-                            float_matches = self.find_float_in_data(data, base_address)
-                            for match in float_matches:
-                                results.append({
-                                    "address": match,
-                                    "module": module_name,
-                                    "data_type": "Float"
-                                })
-                        elif data_type == "String":
-                            string_matches = self.find_string_in_data(data, base_address)
-                            for match in string_matches:
-                                results.append({
-                                    "address": match,
-                                    "module": module_name,
-                                    "data_type": "String"
-                                })
-                        else:  # "All"
-                            int_matches = self.find_int_in_data(data, base_address)
-                            float_matches = self.find_float_in_data(data, base_address)
-                            string_matches = self.find_string_in_data(data, base_address)
-                            for match in int_matches:
-                                results.append({
-                                    "address": match,
-                                    "module": module_name,
-                                    "data_type": "Integer"
-                                })
-                            for match in float_matches:
-                                results.append({
-                                    "address": match,
-                                    "module": module_name,
-                                    "data_type": "Float"
-                                })
-                            for match in string_matches:
-                                results.append({
-                                    "address": match,
-                                    "module": module_name,
-                                    "data_type": "String"
-                                })
-                    except Exception as e:
-                        logger.error(f"Error processing module {module_name} in PID={pid}: {e}")
-                        continue
-
-        except Exception as e:
-            logger.error(f"Error during memory region parsing: {e}")
-
-        return results
-
-    def find_int_in_data(self, data: bytes, base_address: int) -> List[int]:
-        """Find all integer matches in the data."""
-        # Placeholder: Implement integer search logic if needed
-        # Currently, returns an empty list
-        return []
-
-    def find_float_in_data(self, data: bytes, base_address: int) -> List[int]:
-        """Find all float matches in the data."""
-        # Placeholder: Implement float search logic if needed
-        # Currently, returns an empty list
-        return []
-
-    def find_string_in_data(self, data: bytes, base_address: int) -> List[int]:
-        """Find all string matches in the data."""
-        matches = []
-        try:
-            decoded_str = data.decode("utf-8", errors="ignore")
-            # Find all substrings that are meaningful and long enough
-            for match in re.finditer(r'\b\w{4,}\b', decoded_str):
-                byte_pos = match.start()
-                address = base_address + byte_pos
-                matches.append(address)
-        except Exception as e:
-            logger.error(f"Error decoding string data: {e}")
-        return matches
-
-    def get_all_processes(
-        self, pids: Optional[List[int]] = None
-    ) -> List[Dict[str, Any]]:
-        """Retrieve all processes with their modules, optionally filtered by PIDs."""
-        processes_info = []
-        for proc in psutil.process_iter(["pid", "name"]):
-            pid = proc.info["pid"]
-            name = proc.info["name"]
-            if pids and pid not in pids:
-                continue
-            try:
-                modules = self.get_process_modules(pid)
-                processes_info.append({"pid": pid, "name": name, "modules": modules})
-            except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
-                logger.warning(
-                    f"Cannot access process psutil.Process(pid={pid}, name='{name}'): {e}"
-                )
-        return processes_info
-
-    def search_memory_for_value(self, pid: int, value: int) -> List[int]:
-        """
-        Search the process memory for all instances of a specific integer value.
-
-        Args:
-            pid (int): Process ID to search within.
-            value (int): The integer value to search for.
-
-        Returns:
-            List[int]: A list of addresses where the value is found.
-        """
-        matches = []
-        try:
-            pm = Pymem(pid)
-            for module in pm.list_modules():
-                base_addr = int(module.lpBaseOfDll)
-                size = module.SizeOfImage
-                logger.debug(f"Searching in module {module.name} at {hex(base_addr)} with size {size}")
-                data = pm.read_bytes(base_addr, size)
-                for offset in range(0, len(data) - 3, 4):
-                    try:
-                        current_value = struct.unpack("<i", data[offset:offset+4])[0]
-                        if current_value == value:
-                            found_address = base_addr + offset
-                            matches.append(found_address)
-                            logger.info(f"Value {value} found at address {hex(found_address)} in module {module.name}")
-                    except struct.error as e:
-                        logger.warning(f"Skipping invalid data at offset {offset}: {e}")
-                        continue
-            pm.close_process()
-            logger.info(f"Found {len(matches)} occurrences of value {value} in PID={pid}.")
-            return matches
-        except Exception as e:
-            logger.error(f"Error searching memory for value {value} in PID={pid}: {e}")
-            return []
-
-    def search_memory_for_float(self, pid: int, value: float) -> List[int]:
-        """
-        Search the process memory for all instances of a specific float value.
-
-        Args:
-            pid (int): Process ID to search within.
-            value (float): The float value to search for.
-
-        Returns:
-            List[int]: A list of addresses where the value is found.
-        """
-        matches = []
-        try:
-            pm = Pymem(pid)
-            target_bytes = struct.pack("<f", value)  # Little endian float
-            for module in pm.list_modules():
-                base_addr = int(module.lpBaseOfDll)
-                size = module.SizeOfImage
-                logger.debug(f"Searching in module {module.name} at {hex(base_addr)} with size {size}")
-                data = pm.read_bytes(base_addr, size)
-                pos = data.find(target_bytes)
-                while pos != -1:
-                    found_address = base_addr + pos
-                    matches.append(found_address)
-                    logger.info(f"Float value {value} found at address {hex(found_address)} in module {module.name}")
-                    pos = data.find(target_bytes, pos + 1)
-            pm.close_process()
-            logger.info(f"Found {len(matches)} occurrences of float value {value} in PID={pid}.")
-            return matches
-        except Exception as e:
-            logger.error(f"Error searching memory for float value {value} in PID={pid}: {e}")
-            return []
-
-    def search_memory_for_string(self, pid: int, value: str) -> List[int]:
-        """
-        Search the process memory for all instances of a specific string value.
-
-        Args:
-            pid (int): Process ID to search within.
-            value (str): The string value to search for.
-
-        Returns:
-            List[int]: A list of addresses where the value is found.
-        """
-        matches = []
-        try:
-            pm = Pymem(pid)
-            target_bytes = value.encode('utf-8')
-            for module in pm.list_modules():
-                base_addr = int(module.lpBaseOfDll)
-                size = module.SizeOfImage
-                logger.debug(f"Searching in module {module.name} at {hex(base_addr)} with size {size}")
-                data = pm.read_bytes(base_addr, size)
-                pos = data.find(target_bytes)
-                while pos != -1:
-                    found_address = base_addr + pos
-                    matches.append(found_address)
-                    logger.info(f"String value '{value}' found at address {hex(found_address)} in module {module.name}")
-                    pos = data.find(target_bytes, pos + 1)
-            pm.close_process()
-            logger.info(f"Found {len(matches)} occurrences of string value '{value}' in PID={pid}.")
-            return matches
-        except Exception as e:
-            logger.error(f"Error searching memory for string value '{value}' in PID={pid}: {e}")
-            return []
-
-    def search_memory_entries(self, query: str, data_type: str = "All") -> List[MemoryEntryProcessed]:
-        """Search memory entries based on query and data type."""
+    def search_memory_entries(self, value: Any, data_type: str = "All") -> List[MemoryEntryProcessed]:
+        """Search memory entries based on value and data type."""
         results = []
         try:
             for proc in psutil.process_iter(['pid', 'name']):
@@ -384,12 +47,184 @@ class MemoryAnalyzer:
                 memory_entries = self.dumper.dump_module_memory(pid, name)
                 for entry in memory_entries:
                     if data_type == "All" or (
-                        (data_type == "Integer" and entry.integer is not None) or
-                        (data_type == "Float" and entry.float_num is not None) or
-                        (data_type == "String" and entry.string is not None)
+                        (data_type == "Integer" and entry.integer == value) or
+                        (data_type == "Float" and entry.float_num == value) or
+                        (data_type == "String" and entry.string == value)
                     ):
                         results.append(entry)
         except Exception as e:
             logger.error(f"Error during memory search: {e}")
 
+        logger.info(f"Search for value '{value}' of type '{data_type}' found {len(results)} entries.")
         return results
+
+    def find_addresses_by_value(self, pm: Pymem, module_name: str, value: Any) -> List[int]:
+        """
+        특정 모듈 내에서 주어진 값을 검색하여 주소 목록을 반환합니다.
+
+        Args:
+            pm (Pymem): Pymem 인스턴스.
+            module_name (str): 검색할 모듈 이름.
+            value (Any): 검색할 값 (int, float, str).
+
+        Returns:
+            List[int]: 값을 찾은 주소 목록.
+        """
+        addresses = []
+        try:
+            for module in pm.list_modules():
+                if module.name.decode().lower() == module_name.lower():
+                    base_address = int(module.lpBaseOfDll)
+                    size = module.SizeOfImage
+                    data = pm.read_bytes(base_address, size)
+
+                    if isinstance(value, int):
+                        fmt = "<i"  # 리틀 엔디언 정수
+                        byte_size = struct.calcsize(fmt)
+                        for i in range(0, len(data) - byte_size + 1, byte_size):
+                            try:
+                                current_val = struct.unpack(fmt, data[i:i+byte_size])[0]
+                                if current_val == value:
+                                    found_address = base_address + i
+                                    addresses.append(found_address)
+                            except struct.error:
+                                continue
+
+                    elif isinstance(value, float):
+                        fmt = "<f"  # 리틀 엔디언 부동소수점
+                        byte_size = struct.calcsize(fmt)
+                        for i in range(0, len(data) - byte_size + 1, byte_size):
+                            try:
+                                current_val = struct.unpack(fmt, data[i:i+byte_size])[0]
+                                if current_val == value:
+                                    found_address = base_address + i
+                                    addresses.append(found_address)
+                            except struct.error:
+                                continue
+
+                    elif isinstance(value, str):
+                        encoded_str = value.encode('utf-8')
+                        str_len = len(encoded_str)
+                        pattern = re.escape(value)
+                        for match in re.finditer(pattern, data.decode('utf-8', 'ignore')):
+                            found_address = base_address + match.start()
+                            addresses.append(found_address)
+
+        except Exception as e:
+            logger.error(f"Error finding addresses by value: {e}")
+
+        logger.info(f"Found {len(addresses)} addresses with value {value} in module {module_name}")
+        return addresses
+
+    def byte_pattern_search(self, pm: Pymem, module_name: str, pattern: bytes) -> List[int]:
+        """
+        바이트 패턴을 검색하여 주소 목록을 반환합니다.
+
+        Args:
+            pm (Pymem): Pymem 인스턴스.
+            module_name (str): 검색할 모듈 이름.
+            pattern (bytes): 검색할 바이트 패턴.
+
+        Returns:
+            List[int]: 패턴이 발견된 주소 목록.
+        """
+        addresses = []
+        try:
+            for module in pm.list_modules():
+                if module.name.decode().lower() == module_name.lower():
+                    base_address = int(module.lpBaseOfDll)
+                    size = module.SizeOfImage
+                    data = pm.read_bytes(base_address, size)
+
+                    pos = data.find(pattern)
+                    while pos != -1:
+                        found_address = base_address + pos
+                        addresses.append(found_address)
+                        pos = data.find(pattern, pos + 1)
+
+        except Exception as e:
+            logger.error(f"Error during byte pattern search: {e}")
+
+        logger.info(f"Found {len(addresses)} addresses with pattern {pattern} in module {module_name}")
+        return addresses
+
+    def pointer_chain_scan(self, pm: Pymem, base_address: int, offsets: List[int]) -> Optional[int]:
+        """
+        포인터 체인을 따라가며 최종 주소를 반환합니다.
+
+        Args:
+            pm (Pymem): Pymem 인스턴스.
+            base_address (int): 시작 포인터 주소.
+            offsets (List[int]): 오프셋 리스트.
+
+        Returns:
+            Optional[int]: 최종 주소 또는 None.
+        """
+        try:
+            address = base_address
+            for offset in offsets:
+                value = pm.read_uint(address)
+                address = value + offset
+            return address
+        except Exception as e:
+            logger.error(f"Error during pointer chain scan: {e}")
+            return None
+
+    def signature_based_scan(self, pm: Pymem, module_name: str, signature: List[str]) -> List[int]:
+        """
+        시그니처(어셈블리 명령어)를 기반으로 패턴을 검색합니다.
+
+        Args:
+            pm (Pymem): Pymem 인스턴스.
+            module_name (str): 검색할 모듈 이름.
+            signature (List[str]): 어셈블리 명령어 리스트 (시그니처).
+
+        Returns:
+            List[int]: 시그니처가 발견된 주소 목록.
+        """
+        addresses = []
+        try:
+            # 시그니처를 바이트 패턴으로 변환
+            md = Cs(CS_ARCH_X86, CS_MODE_64)  # 프로세스 아키텍처에 맞게 조정
+            byte_pattern = b''.join([instr.encode('utf-8') for instr in signature])
+            
+            for module in pm.list_modules():
+                if module.name.decode().lower() == module_name.lower():
+                    base_address = int(module.lpBaseOfDll)
+                    size = module.SizeOfImage
+                    data = pm.read_bytes(base_address, size)
+
+                    pos = data.find(byte_pattern)
+                    while pos != -1:
+                        found_address = base_address + pos
+                        addresses.append(found_address)
+                        pos = data.find(byte_pattern, pos + 1)
+
+        except Exception as e:
+            logger.error(f"Error during signature-based scan: {e}")
+
+        logger.info(f"Found {len(addresses)} addresses with signature {signature} in module {module_name}")
+        return addresses
+
+    def change_comparison_scan(self, old_dump: Dict[int, bytes], new_dump: Dict[int, bytes]) -> List[int]:
+        """
+        메모리 덤프를 비교하여 변경된 주소를 찾습니다.
+
+        Args:
+            old_dump (Dict[int, bytes]): 이전 메모리 덤프 (주소: 데이터).
+            new_dump (Dict[int, bytes]): 새로운 메모리 덤프 (주소: 데이터).
+
+        Returns:
+            List[int]: 변경된 주소 목록.
+        """
+        changed_addresses = []
+        try:
+            for addr, old_data in old_dump.items():
+                new_data = new_dump.get(addr)
+                if new_data and old_data != new_data:
+                    changed_addresses.append(addr)
+        except Exception as e:
+            logger.error(f"Error during change comparison scan: {e}")
+
+        logger.info(f"Found {len(changed_addresses)} changed addresses.")
+        return changed_addresses

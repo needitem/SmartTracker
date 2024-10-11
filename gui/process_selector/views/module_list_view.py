@@ -28,8 +28,6 @@ class ModuleListView(ttk.Treeview):
         # Bind the selection event to the callback
         self.bind("<<TreeviewSelect>>", on_select_callback)
         
-        # self.pack(fill=tk.BOTH, expand=True)  # 이 줄을 제거
-    
     def sort_column(self, col, reverse):
         """Sort Treeview column when heading is clicked."""
         try:

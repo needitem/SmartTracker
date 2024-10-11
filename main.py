@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from dump.logging.logging_config import setup_logging  # 로깅 설정을 가장 먼저 임포트
-from dump.utils import admin  # 관리자 권한 함수 임포트
+from dump.utils.admin import ensure_admin  # 관리자 권한 함수 임포트
 from dump.base.memory_dumper import MemoryDumper
 from dump.analyzer.memory_analyzer import MemoryAnalyzer  # 올바른 임포트 경로 유지
 from gui.process_selector.main_frame import ProcessSelector
@@ -12,14 +12,11 @@ from gui.process_selector.main_frame import ProcessSelector
 # **로깅 설정 초기화**
 logger = setup_logging(
     log_dir="logs",
-    log_level=logging.INFO  # 로깅 레벨을 INFO로 설정하여 DEBUG 로그 비활성화
+    log_level=logging.DEBUG  # 로깅 레벨을 DEBUG로 설정하여 상세 로그 활성화
 )
 
-# 관리자 권한 확인 (필요 시 활성화)
-# admin.ensure_admin()
-
 # 로깅을 사용하여 관리자 권한 확인 결과 로그 기록
-logger.info("Application is running with administrator privileges.")
+logger.info("Application is starting. Checking for administrator privileges.")
 
 
 class Application(tk.Tk):
@@ -52,9 +49,10 @@ class Application(tk.Tk):
 
 def main():
     try:
-        admin.ensure_admin()  # 관리자 권한 확인 및 활성화
+        logger.debug("Initializing Application instance.")
         app = Application()
         app.protocol("WM_DELETE_WINDOW", app.on_closing)
+        logger.debug("Starting main event loop.")
         app.mainloop()
     except Exception as e:
         logger.exception("Unhandled exception occurred:")
@@ -62,4 +60,7 @@ def main():
 
 
 if __name__ == "__main__":
+    logger.debug("Calling ensure_admin() to verify administrator privileges.")
+    ensure_admin()  # 애플리케이션이 관리자 권한으로 실행되도록 보장
+    logger.debug("ensure_admin() completed. Proceeding to start the application.")
     main()

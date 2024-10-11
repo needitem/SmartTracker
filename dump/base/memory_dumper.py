@@ -49,22 +49,24 @@ class MemoryDumper:
         pass
 
     def list_modules(self, pid: int) -> List[Dict[str, Any]]:
-        """프로세스의 모든 모듈을 나열합니다."""
+        """Retrieve all modules of a process using pymem."""
         try:
             pm = Pymem(pid)
+            pm_modules = pm.list_modules()
             modules = []
-            for module in pm.list_modules():
+            for module in pm_modules:
+                module_name = module.name.decode('utf-8') if isinstance(module.name, bytes) else module.name
+                base_address = hex(int(module.lpBaseOfDll))  # Ensure hex string
+                size = module.SizeOfImage
                 modules.append({
-                    "name": module.name.decode('utf-8', errors='ignore') if isinstance(module.name, bytes) else module.name,
-                    "base_address": hex(module.lpBaseOfDll),
-                    "size": module.SizeOfImage
+                    "name": module_name,
+                    "base_address": base_address,
+                    "size": size
                 })
+                logger.debug(f"Module found: Name={module_name}, Base Address={base_address}, Size={size}")
+            logger.debug(f"Total modules found for PID={pid}: {len(modules)}")
             pm.close_process()
-            logger.debug(f"Modules for PID={pid}: {modules}")
             return modules
-        except AttributeError as e:
-            logger.error(f"Pymem 객체에 'list_modules' 속성이 없습니다: {e}")
-            return []
         except Exception as e:
             logger.error(f"Error listing modules for PID={pid}: {e}")
             return []
