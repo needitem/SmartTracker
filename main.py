@@ -1,17 +1,19 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
 import logging
 import sys
+import tkinter as tk
+from tkinter import ttk, messagebox
 
-from dump.logging.logging_config import setup_logging  # 로깅 설정 함수 임포트
+from dump.logging.logging_config import setup_logging  # 로깅 설정을 가장 먼저 임포트
 from dump.utils import admin  # 관리자 권한 함수 임포트
 from dump.base.memory_dumper import MemoryDumper
-from gui.process_selector.main_frame import ProcessSelector
 from dump.analyzer.memory_analyzer import MemoryAnalyzer  # 올바른 임포트 경로 유지
+from gui.process_selector.main_frame import ProcessSelector
 
+# **로깅 설정 초기화**
 logger = setup_logging(
-    log_dir="logs", log_level=logging.DEBUG  # DEBUG 레벨로 변경하여 상세 로그 캡처
-)  # log_level을 DEBUG로 설정
+    log_dir="logs",
+    log_level=logging.INFO  # 로깅 레벨을 INFO로 설정하여 DEBUG 로그 비활성화
+)
 
 # 관리자 권한 확인 (필요 시 활성화)
 # admin.ensure_admin()
@@ -27,7 +29,7 @@ class Application(tk.Tk):
         self.geometry("1200x800")
 
         # Initialize MemoryDumper
-        self.memory_dumper = MemoryDumper()  # Removed db parameter
+        self.memory_dumper = MemoryDumper()  # db 파라미터 제거됨
 
         # Initialize MemoryAnalyzer
         self.memory_analyzer = MemoryAnalyzer()

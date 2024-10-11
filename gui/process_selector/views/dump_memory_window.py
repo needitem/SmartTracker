@@ -105,4 +105,21 @@ class DumpMemoryWindow(tk.Toplevel):
         )
         close_button.grid(row=2, column=0, pady=10)
 
-    # ... 나머지 코드 유지 ...
+    def sort_column(self, col, reverse):
+        """Sort the treeview based on a given column."""
+        try:
+            # Get all items and sort them
+            data = [(self.set(child, col), child) for child in self.get_children('')]
+            if col == "PID":
+                data.sort(key=lambda t: int(t[0]) if t[0].isdigit() else 0, reverse=reverse)
+            else:
+                data.sort(reverse=reverse)
+
+            # Rearrange items in sorted order
+            for index, (val, child) in enumerate(data):
+                self.move(child, '', index)
+
+            # Toggle the sort order for the next click
+            self.tree.heading(col, command=lambda: self.sort_column(col, not reverse))
+        except Exception as e:
+            logger.error(f"Error sorting column {col}: {e}")
